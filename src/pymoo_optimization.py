@@ -15,7 +15,10 @@ Using pymoo to optimize Arthur's model.
 # get the fitness function, model.MOO.list_fitness()
 
 # imports
+import datetime
+import os
 import numpy as np
+import pandas as pd
 
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import Problem
@@ -67,8 +70,17 @@ if __name__ == "__main__" :
     # hard-coded values
     population_size = 100
     offspring_size = 100
-    max_generations = 1000
+    max_generations = 10
     random_seed = 42
+    results_folder = "../local" # 'local' is not under version control
+    
+    # generate the folder; the name will be different for every run, as it is
+    # initialized with the current time
+    output_folder = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + "-cell-model-optimization"
+    output_folder = os.path.join(results_folder, output_folder)
+    
+    if not os.path.exists(output_folder) :
+        os.makedirs(output_folder)
     
     # instantiate model
     model = MODEL()
@@ -94,8 +106,8 @@ if __name__ == "__main__" :
     algorithm = NSGA2(pop_size=population_size)
     
     # start the run
-    print("Starting the evolutionary run, population_size=%d, max_generations=%d",
-          population_size, max_generations)
+    print("Starting the evolutionary run, population_size=%d, max_generations=%d" %
+          (population_size, max_generations))
     result = minimize(  
                 cell_problem,
                 algorithm,
@@ -103,3 +115,14 @@ if __name__ == "__main__" :
                 seed=random_seed,
                 verbose=True
                         )
+    
+    # do something with the result
+    results_dictionary = dict()
+    results_dictionary["generation"] = [max_generations] * result.X.shape[0]
+    for i in range(0, n_objectives) :
+        results_dictionary["fitness_%d" % (i+1)] = result.F[:,i]
+    for i in range(0, n_variables) :
+        results_dictionary["variable_%d" % i] = result.X[:,i]
+    df_results = pd.DataFrame.from_dict(results_dictionary)
+    df_results.to_csv(os.path.join(output_folder, "result.csv"), index=False)
+    
