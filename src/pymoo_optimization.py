@@ -15,10 +15,52 @@ Using pymoo to optimize Arthur's model.
 # get the fitness function, model.MOO.list_fitness()
 
 # imports
+import numpy as np
 
+from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.core.problem import Problem
+from pymoo.optimize import minimize
+
+# there is a super-annoying FutureWarning appearing everytime the evaluation
+# function is called, so this block of code here just mutes it
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # import of a local module
 from model.cell_model import MODEL
+
+
+# specific problem class which inherits from pymoo's generic problem class
+class CellProblem(Problem) :
+    
+    cell_model_instance = None
+    
+    def __init__(self, n_variables, n_objectives, cell_model_instance, xl=0.0, xu=1.0) :
+        # xl and xu are the lower and upper bounds for each variable
+        super().__init__(n_var=n_variables, n_obj=n_objectives, xl=0.0, xu=1.0)
+        # store the instance of the cell model, to be used later to compute
+        # the fitness values
+        self.cell_model_instance = cell_model_instance
+        
+    def _evaluate(self, x, out, *args, **kwargs) :
+        # this evaluation function starts from the assumption that 'x' is actually
+        # an array containing all individuals; so we can shape the fitness values
+        # numpy array accordingly
+        fitness_values = np.zeros((x.shape[0], 1, self.n_obj))
+        
+        # run the evaluation
+        for i in range(0, x.shape[0]) :
+            # fitness values are obtained by mapping the vector the cell model's
+            # internal elasticity matrix, and then calling a method from the instance
+            self.cell_model_instance.elasticity.s.change_from_vector(x[i])
+            x_fitness_values = self.cell_model_instance.MOO.list_fitness()
+            # store the fitness values, converted to a numpy array
+            fitness_values[i,0,:] = np.array(x_fitness_values)
+            
+        # place the appropriate result in the 'out' dictionary
+        out["F"] = fitness_values
+        
+        return
 
 if __name__ == "__main__" :
     
@@ -26,10 +68,38 @@ if __name__ == "__main__" :
     population_size = 100
     offspring_size = 100
     max_generations = 1000
+    random_seed = 42
     
     # instantiate model
     model = MODEL()
     # initialize model with default internal values for elasticity matrix
     model.MOO.build_model()
-    # this is just a printout to check that everything is in order
+    # this is just a debug printout to check that everything is in order
     print(model.MOO.vectors)
+    example_individual = [0.5, 0.5, 0.5, 0.5]
+    model.elasticity.s.change_from_vector(example_individual)
+    print(model.MOO.list_fitness())
+    
+    # and now, we begin for real
+    print("Setting up the evolutionary algorithm...")
+    
+    # get the information that we need
+    n_variables = model.MOO.vectors["shape"]
+    n_objectives = len(model.MOO.list_fitness())
+    
+    # let's start with instantiating the problem class
+    cell_problem = CellProblem(n_variables, n_objectives, model)
+    
+    # then, let's set up the algorithm
+    algorithm = NSGA2(pop_size=population_size)
+    
+    # start the run
+    print("Starting the evolutionary run, population_size=%d, max_generations=%d",
+          population_size, max_generations)
+    result = minimize(  
+                cell_problem,
+                algorithm,
+                ('n_gen', max_generations), 
+                seed=random_seed,
+                verbose=True
+                        )
