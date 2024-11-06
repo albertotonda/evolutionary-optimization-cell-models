@@ -249,9 +249,9 @@ class MOO_class:
         diff_rho = np.nan_to_num(diff_rho)
 
         # L1 is more sensible to the global difference
-        norm_L1 = np.abs(diff_rho).sum().sum()  
+        #norm_L1 = np.abs(diff_rho).sum().sum()  
         # L2 is more usefull to focus on magnitude of difference
-        norm_L2 = np.sqrt((diff_rho**2).sum().sum())
+        norm_L2 = (diff_rho**2).sum().sum()
 
         return(norm_L2)
     
@@ -336,8 +336,11 @@ class MOO_class:
     def build_model(self, Big=False, random_seed=None):
         """
         Big : bool
-        Do we create a big model of E.Coli Core ? 
-        else a small linear model is created
+            Do we create a big model of E.Coli Core ? 
+            else a small linear model is created
+
+        random_seed : int
+            Seed for generated the fake real data
         """
         if Big :
             self.__class_MODEL_instance.read_SBtab()
