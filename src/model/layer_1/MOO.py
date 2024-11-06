@@ -124,7 +124,7 @@ class MOO_class:
 
     ###############################################################################################################
     #########      Function to create a false correlation matrix and the elasticity associated           ##########
-    def set_real_data(self, rho_matrix = None) :
+    def set_real_data(self, rho_matrix = None, random_seed=None) :
         ### Description of the fonction
         """
         Fonction to create fake real data 
@@ -136,6 +136,12 @@ class MOO_class:
         
         # Otherwise, we create a fake one with random numbers
         else :
+            
+            # since we are generating pseudo-random number, let's check if the
+            # random seed has been specified; in that case, we set up the random
+            # number generator from numpy to have repeatable experiments
+            if random_seed is not None :
+                np.random.seed(random_seed)
 
             # We take into memory the old value of the elasticity matrix of metabolite
             old_ela = self.__class_MODEL_instance.elasticity.s.df.copy()
@@ -327,7 +333,7 @@ class MOO_class:
 
     ##########################################################################
     #########         Function to build a premade model             ########## 
-    def build_model(self, Big=False):
+    def build_model(self, Big=False, random_seed=None):
         """
         Big : bool
         Do we create a big model of E.Coli Core ? 
@@ -344,17 +350,17 @@ class MOO_class:
         self.__class_MODEL_instance.parameters.remove("Temperature")
         self.__class_MODEL_instance.elasticity.s.half_satured() 
 
-        self.__class_MODEL_instance.MOO.build_data()
+        self.__class_MODEL_instance.MOO.build_data(random_seed=random_seed)
 
 
     ##########################################################################
     #########         Function to build a premade model             ########## 
-    def build_data(self):
+    def build_data(self, random_seed=None):
         """
         """
 
         self.sampled_elements()
-        self.set_real_data()
+        self.set_real_data(random_seed=random_seed)
         self.set_vector()
 
 

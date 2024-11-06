@@ -70,9 +70,9 @@ if __name__ == "__main__" :
     # hard-coded values
     population_size = 100
     offspring_size = 100
-    max_generations = 10
+    max_generations = 1000
     random_seed = 42
-    results_folder = "../local" # 'local' is not under version control
+    results_folder = "../local" # 'local' is not under version control (git)
     
     # generate the folder; the name will be different for every run, as it is
     # initialized with the current time
@@ -81,11 +81,13 @@ if __name__ == "__main__" :
     
     if not os.path.exists(output_folder) :
         os.makedirs(output_folder)
+        
+    # TODO initialize logging
     
     # instantiate model
     model = MODEL()
     # initialize model with default internal values for elasticity matrix
-    model.MOO.build_model()
+    model.MOO.build_model(random_seed=random_seed)
     # this is just a debug printout to check that everything is in order
     print(model.MOO.vectors)
     example_individual = [0.5, 0.5, 0.5, 0.5]
