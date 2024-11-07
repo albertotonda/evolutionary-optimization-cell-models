@@ -1,0 +1,493 @@
+!!!SBtab Document='Model'						
+						
+!!SBtab TableID='Reaction' TableType='Reaction' TableName='Reaction'						
+!ID	!ReactionFormula	!Name	!NameForPlots	!Identifiers:kegg.reaction	!Identifiers:bigg.reaction	!IsReversible
+ACALD	acald_c_ + coa_c_ + nad_c_ <=> accoa_c_ + h_c_ + nadh_c_	acetaldehyde dehydrogenase (acetylating)	ACALD	R00228	ACALD	True
+ACALDt	acald_e_ <=> acald_c_	acetaldehyde reversible transport	ACALDt		ACALDt	True
+ACKr	ac_c_ + atp_c_ <=> actp_c_ + adp_c_	acetate kinase	ACKr	R00315	ACKr	True
+ACONTa	cit_c_ <=> acon_c_ + h2o_c_	aconitase (half-reaction A, Citrate hydro-lyase)	ACONTa	R01325	ACONTa	True
+ACONTb	acon_c_ + h2o_c_ <=> icit_c_	aconitase (half-reaction B, Isocitrate hydro-lyase)	ACONTb	R01900	ACONTb	True
+ACt2r	ac_e_ + h_e_ <=> ac_c_ + h_c_	acetate reversible transport via proton symport	ACt2r		ACt2r	True
+ADK1	amp_c_ + atp_c_ <=> 2 adp_c_	adenylate kinase	ADK1	R00127	ADK1	True
+AKGDH	akg_c_ + coa_c_ + nad_c_ <=> co2_c_ + nadh_c_ + succoa_c_	2-Oxoglutarate dehydrogenase	AKGDH	R08549	AKGDH	True
+ATPS4r	adp_c_ + 4 h_e_ + pi_c_ <=> atp_c_ + h2o_c_ + 3 h_c_	ATP synthase (four protons for one ATP)	ATPS4r		ATPS4r	True
+Biomass_Ecoli_core_w_GAM	1.50 _3pg_c_ + 3.75 accoa_c_ + 59.81 atp_c_ + 0.36 e4p_c_ + 0.07 f6p_c_ + 0.13 g3p_c_ + 0.20 g6p_c_ + 0.26 gln_c_ + 4.94 glu_c_ + 59.81 h2o_c_ + 3.55 nad_c_ + 13.03 nadph_c_ + 1.79 oaa_c_ + 0.52 pep_c_ + 2.83 pyr_c_ + 0.90 r5p_c_ <=> 59.81 adp_c_ + 4.12 akg_c_ + 3.75 coa_c_ + 59.81 h_c_ + 3.55 nadh_c_ + 13.03 nadp_c_ + 59.81 pi_c_	Biomass Objective Function with GAM	Biomass_Ecoli_core_w_GAM		Biomass_Ecoli_core_w_GAM	True
+CO2t	co2_e_ <=> co2_c_	CO2 transporter via diffusion	CO2t		CO2t	True
+CS	accoa_c_ + h2o_c_ + oaa_c_ <=> cit_c_ + coa_c_ + h_c_	citrate synthase	CS	R00351	CS	True
+CYTBD	2 h_c_ + 0.50 o2_c_ + q8h2_c_ <=> h2o_c_ + 2 h_e_ + q8_c_	cytochrome oxidase bd (ubiquinol-8: 2 protons)	CYTBD		CYTBD	True
+ENO	_2pg_c_ <=> h2o_c_ + pep_c_	enolase	ENO	R00658	ENO	True
+FBA	fdp_c_ <=> dhap_c_ + g3p_c_	fructose-bisphosphate aldolase	FBA	R01068	FBA	True
+FORti	for_c_ <=> for_e_	formate transport via diffusion	FORti		FORti	True
+FRD7	fum_c_ + q8h2_c_ <=> q8_c_ + succ_c_	fumarate reductase	FRD7		FRD7	True
+FUM	fum_c_ + h2o_c_ <=> mal_c_	fumarase	FUM	R01082	FUM	True
+FUMt2_2	fum_e_ + 2 h_e_ <=> fum_c_ + 2 h_c_	Fumarate transport via proton symport (2 H)	FUMt2_2		FUMt2_2	True
+G6PDH2r	g6p_c_ + nadp_c_ <=> _6pgl_c_ + h_c_ + nadph_c_	glucose 6-phosphate dehydrogenase	G6PDH2r	R00835	G6PDH2r	True
+GAPD	g3p_c_ + nad_c_ + pi_c_ <=> _13dpg_c_ + h_c_ + nadh_c_	glyceraldehyde-3-phosphate dehydrogenase	GAPD	R01061	GAPD	True
+GLCpts	glc__D_e_ + pep_c_ <=> g6p_c_ + pyr_c_	D-glucose transport via PEP:Pyr PTS	GLCpts		GLCpts	True
+GLUDy	glu_c_ + h2o_c_ + nadp_c_ <=> akg_c_ + h_c_ + nadph_c_ + nh4_c_	glutamate dehydrogenase (NADP)	GLUDy	R00248	GLUDy	True
+GLUN	gln_c_ + h2o_c_ <=> glu_c_ + nh4_c_	glutaminase	GLUN	R00256	GLUN	True
+GND	_6pgc_c_ + nadp_c_ <=> co2_c_ + nadph_c_ + ru5p_c_	phosphogluconate dehydrogenase	GND	R01528	GND	True
+H2Ot	h2o_e_ <=> h2o_c_	H2O transport via diffusion	H2Ot		H2Ot	True
+ICDHyr	icit_c_ + nadp_c_ <=> akg_c_ + co2_c_ + nadph_c_	isocitrate dehydrogenase (NADP)	ICDHyr	R00267	ICDHyr	True
+ICL	icit_c_ <=> glx_c_ + succ_c_	Isocitrate lyase	ICL	R00479	ICL	True
+MALS	accoa_c_ + glx_c_ + h2o_c_ <=> coa_c_ + h_c_ + mal_c_	malate synthase	MALS	R00472	MALS	True
+MDH	mal_c_ + nad_c_ <=> h_c_ + nadh_c_ + oaa_c_	malate dehydrogenase	MDH	R00342	MDH	True
+ME2	mal_c_ + nadp_c_ <=> co2_c_ + nadph_c_ + pyr_c_	malic enzyme (NADP)	ME2	R00216	ME2	True
+NADH16	4 h_c_ + nadh_c_ + q8_c_ <=> 3 h_e_ + nad_c_ + q8h2_c_	NADH dehydrogenase (ubiquinone-8 & 3 protons)	NADH16		NADH16	True
+NADTRHD	nad_c_ + nadph_c_ <=> nadh_c_ + nadp_c_	NAD transhydrogenase	NADTRHD	R00112	NADTRHD	True
+NH4t	nh4_e_ <=> nh4_c_	ammonia reversible transport	NH4t		NH4t	True
+O2t	o2_e_ <=> o2_c_	o2 transport via diffusion	O2t		O2t	True
+PDH	coa_c_ + nad_c_ + pyr_c_ <=> accoa_c_ + co2_c_ + nadh_c_	pyruvate dehydrogenase	PDH	R00209	PDH	True
+PFK	atp_c_ + f6p_c_ <=> adp_c_ + fdp_c_ + h_c_	phosphofructokinase	PFK		PFK	True
+PFL	coa_c_ + pyr_c_ <=> accoa_c_ + for_c_	pyruvate formate lyase	PFL	R00212	PFL	True
+PGI	g6p_c_ <=> f6p_c_	glucose-6-phosphate isomerase	PGI		PGI	True
+PGK	_3pg_c_ + atp_c_ <=> _13dpg_c_ + adp_c_	phosphoglycerate kinase	PGK	R01512	PGK	True
+PGL	_6pgl_c_ + h2o_c_ <=> _6pgc_c_ + h_c_	6-phosphogluconolactonase	PGL	R02035	PGL	True
+PGM	_2pg_c_ <=> _3pg_c_	phosphoglycerate mutase	PGM	R01518	PGM	True
+PIt2r	h_e_ + pi_e_ <=> h_c_ + pi_c_	phosphate reversible transport via proton symport	PIt2r		PIt2r	True
+PPC	co2_c_ + h2o_c_ + pep_c_ <=> h_c_ + oaa_c_ + pi_c_	phosphoenolpyruvate carboxylase	PPC	R00345	PPC	True
+PPCK	atp_c_ + oaa_c_ <=> adp_c_ + co2_c_ + pep_c_	phosphoenolpyruvate carboxykinase	PPCK	R00341	PPCK	True
+PPS	atp_c_ + h2o_c_ + pyr_c_ <=> amp_c_ + 2 h_c_ + pep_c_ + pi_c_	phosphoenolpyruvate synthase	PPS	R00199	PPS	True
+PTAr	accoa_c_ + pi_c_ <=> actp_c_ + coa_c_	phosphotransacetylase	PTAr	R00230	PTAr	True
+PYK	adp_c_ + h_c_ + pep_c_ <=> atp_c_ + pyr_c_	pyruvate kinase	PYK	R00200	PYK	True
+RPE	ru5p_c_ <=> xu5p_c_	ribulose 5-phosphate 3-epimerase	RPE	R01529	RPE	True
+RPI	r5p_c_ <=> ru5p_c_	ribose-5-phosphate isomerase	RPI		RPI	True
+SUCCt2_2	2 h_e_ + succ_e_ <=> 2 h_c_ + succ_c_	succinate transport via proton symport (2 H)	SUCCt2_2		SUCCt2_2	True
+SUCCt3	h_e_ + succ_c_ <=> h_c_ + succ_e_	succinate transport out via proton antiport	SUCCt3		SUCCt3	True
+SUCOAS	atp_c_ + coa_c_ + succ_c_ <=> adp_c_ + pi_c_ + succoa_c_	succinyl-CoA synthetase (ADP-forming)	SUCOAS	R00405	SUCOAS	True
+TALA	g3p_c_ + s7p_c_ <=> e4p_c_ + f6p_c_	transaldolase	TALA	R01827	TALA	True
+TKT1	r5p_c_ + xu5p_c_ <=> g3p_c_ + s7p_c_	transketolase	TKT1		TKT1	True
+TKT2	e4p_c_ + xu5p_c_ <=> f6p_c_ + g3p_c_	transketolase	TKT2	R01830	TKT2	True
+TPI	dhap_c_ <=> g3p_c_	triose-phosphate isomerase	TPI	R01015	TPI	True
+						
+!!SBtab TableID='Compound' TableType='Compound' TableName='Compound'						
+!ID	!Name	!NameForPlots	!Identifiers:kegg.compound	!Identifiers:bigg.compound	!IsConstant	!InitialConcentration
+_13dpg_c_	3-Phospho-D-glyceroyl-phosphate	13dpg[c]	C00236	13dpg[c]	False	0.10158844
+_2pg_c_	D-Glycerate-2-phosphate	2pg[c]	C00631	2pg[c]	False	1
+_3pg_c_	3-Phospho-D-glycerate	3pg[c]	C00197	3pg[c]	False	1.5916401
+_6pgc_c_	6-Phospho-D-gluconate	6pgc[c]	C00345	6pgc[c]	False	0.55707762
+_6pgl_c_	6-phospho-D-glucono-1-5-lactone	6pgl[c]	C01236	6pgl[c]	False	0.99999999
+ac_c_	Acetate	ac[c]	C00033	ac[c]	False	0.98759439
+ac_e_	Acetate	ac[e]	C00033	ac[e]	True	1
+acald_c_	Acetaldehyde	acald[c]	C00084	acald[c]	False	0.95573709
+acald_e_	Acetaldehyde	acald[e]	C00084	acald[e]	True	0.99762193
+accoa_c_	Acetyl-CoA	accoa[c]	C00024	accoa[c]	False	1.212
+acon_c_	cis-Aconitate	acon-C[c]	C00417	acon[c]	False	0.0322
+actp_c_	Acetyl-phosphate	actp[c]	C00227	actp[c]	False	1.008899
+adp_c_	ADP	adp[c]	G11113	adp[c]	False	2.3409102
+akg_c_	2-Oxoglutarate	akg[c]	C00026	akg[c]	False	1.2738972
+amp_c_	AMP	amp[c]	C00020	amp[c]	False	1
+atp_c_	ATP	atp[c]	C00002	atp[c]	False	6.898279
+cit_c_	Citrate	cit[c]	C13660	cit[c]	False	1
+co2_c_	CO2	co2[c]	C00011	co2[c]	False	1.2784408
+co2_e_	CO2	co2[e]	C00011	co2[e]	True	0.999998
+coa_c_	Coenzyme-A	coa[c]	C00010	coa[c]	False	2.74
+dhap_c_	Dihydroxyacetone-phosphate	dhap[c]	C00111	dhap[c]	False	2.6405778
+e4p_c_	D-Erythrose-4-phosphate	e4p[c]	C00279	e4p[c]	False	0.053273582
+f6p_c_	D-Fructose-6-phosphate	f6p[c]	C05345	f6p[c]	False	0.97707648
+fdp_c_	D-Fructose-1-6-bisphosphate	fdp[c]	C00354	fdp[c]	False	2.3219162
+for_c_	Formate	for[c]	C00058	for[c]	False	1.0070906
+for_e_	Formate	for[e]	C00058	for[e]	True	0.99295931
+fum_c_	Fumarate	fum[c]	C00122	fum[c]	False	1.0964845
+fum_e_	Fumarate	fum[e]	C00122	fum[e]	True	1
+g3p_c_	Glyceraldehyde-3-phosphate	g3p[c]	C00661	g3p[c]	False	0.92803025
+g6p_c_	D-Glucose-6-phosphate	g6p[c]	C00092	g6p[c]	False	1.8983213
+glc__D_e_	D-Glucose	glc-D[e]	C00031	glc[e]	True	1.0225566
+gln_c_	L-Glutamine	gln-L[c]	C00303	gln[c]	False	0.99687208
+glu_c_	L-Glutamate	glu-L[c]	C00302	glu[c]	False	0.94221334
+glx_c_	Glyoxylate	glx[c]	C00048	glx[c]	False	0.97680002
+h2o_c_	H2O	h2o[c]	C18714	h2o[c]	False	0.59539922
+h2o_e_	H2O	h2o[e]	C18714	h2o[e]	True	0.99294404
+h_c_	H	h[c]	C00080	h[c]	False	1.7296865
+h_e_	H	h[e]	C00080	h[e]	True	0.986902
+icit_c_	Isocitrate	icit[c]	C00311	icit[c]	False	0.016321744
+mal_c_	L-Malate	mal-L[c]	C00149	mal[c]	False	3.3706848
+nad_c_	Nicotinamide-adenine-dinucleotide	nad[c]	C00003	nad[c]	False	4.2256266
+nadh_c_	Nicotinamide-adenine-dinucleotide-reduced	nadh[c]	C00004	nadh[c]	False	0.05483026
+nadp_c_	Nicotinamide-adenine-dinucleotide-phosphate	nadp[c]	C00006	nadp[c]	False	0.022576396
+nadph_c_	Nicotinamide-adenine-dinucleotide-phosphate-reduced	nadph[c]	C00005	nadph[c]	False	0.22778314
+nh4_c_	Ammonium	nh4[c]	C01342	nh4[c]	False	0.99797584
+nh4_e_	Ammonium	nh4[e]	C01342	nh4[e]	True	1.0020283
+o2_c_	O2	o2[c]	C00007	o2[c]	False	0.99814906
+o2_e_	O2	o2[e]	C00007	o2[e]	True	1.0018544
+oaa_c_	Oxaloacetate	oaa[c]	C03981	oaa[c]	False	0.80674458
+pep_c_	Phosphoenolpyruvate	pep[c]	C00074	pep[c]	False	0.70631542
+pi_c_	Phosphate	pi[c]	C13558	pi[c]	False	1.8803798
+pi_e_	Phosphate	pi[e]	C13558	pi[e]	True	1.014088
+pyr_c_	Pyruvate	pyr[c]	C00022	pyr[c]	False	2.8103082
+q8_c_	Ubiquinone-8	q8[c]	C17569	q8[c]	False	1.0625137
+q8h2_c_	Ubiquinol-8	q8h2[c]		q8h2[c]	False	0.94116431
+r5p_c_	alpha-D-Ribose-5-phosphate	r5p[c]	C03736	r5p[c]	False	0.99719598
+ru5p_c_	D-Ribulose-5-phosphate	ru5p-D[c]	C00199	ru5p[c]	False	1.317512
+s7p_c_	Sedoheptulose-7-phosphate	s7p[c]	C05382	s7p[c]	False	0.97779839
+succ_c_	Succinate	succ[c]	C00042	succ[c]	False	2.3706508
+succ_e_	Succinate	succ[e]	C00042	succ[e]	True	1.031042
+succoa_c_	Succinyl-CoA	succoa[c]	C00091	succoa[c]	False	0.466
+xu5p_c_	D-Xylulose-5-phosphate	xu5p-D[c]	C03291	xu5p[c]	False	1.0772307
+						
+!!SBtab TableID='Position' TableType='Position' TableName='Network layout'						
+!Element	!PositionX	!PositionY				
+_13dpg_c_	0.68707209	0.20270394				
+_2pg_c_	0.40422938	0.14142136				
+_3pg_c_	0.55390031	0.11549411				
+_6pgc_c_	0.46079792	0.35355339				
+_6pgl_c_	0.57157798	0.46786899				
+ac_c_	0.64818122	0.57157798				
+ac_e_	0.71064232	0.70357125				
+acald_c_	0.53740115	0.63050355				
+acald_e_	0.30523443	0.78135299				
+accoa_c_	0.61871843	0.33823274				
+acon_c_	0.3229121	0.42426407				
+actp_c_	0.52208051	0.34766083				
+adp_c_	0.80728024	0.25102291				
+akg_c_	0.66232335	0.34058977				
+amp_c_	0.97227182	0.20506097				
+atp_c_	0.83202898	0.24748737				
+cit_c_	0.49968879	0.44901281				
+co2_c_	0.54682924	0.17795521				
+co2_e_	0.2816642	0.2710576				
+coa_c_	0.54093669	0.35591041				
+dhap_c_	0.16617009	0.21684608				
+e4p_c_	0.3653385	0.050675986				
+f6p_c_	0.45608387	0.11313708				
+fdp_c_	0.42897811	0.19916841				
+for_c_	0.49733177	0.59632672				
+for_e_	0.51383093	0.71417785				
+fum_c_	0.54447222	0.75306872				
+fum_e_	0.73067701	0.81788684				
+g3p_c_	0.33823274	0.15202796				
+g6p_c_	0.58100607	0.10842304				
+glc__D_e_	0.58454161	0.056568542				
+gln_c_	0.79903066	0.28991378				
+glu_c_	0.81552982	0.38773022				
+glx_c_	0.47140452	0.54329371				
+h2o_c_	0.55390031	0.40187235				
+h2o_e_	0.34176828	0.33587572				
+h_c_	0.78606704	0.51147391				
+h_e_	0.84617111	0.64346717				
+icit_c_	0.34530381	0.38065915				
+mal_c_	0.59279118	0.51147391				
+nad_c_	0.68000102	0.4277996				
+nadh_c_	0.68117953	0.40894342				
+nadp_c_	0.66232335	0.23334524				
+nadph_c_	0.63050355	0.23688077				
+nh4_c_	0.62107546	0.49261772				
+nh4_e_	0.35355339	0.58100607				
+o2_c_	0.36062446	0.86384878				
+o2_e_	0.09074537	1.0005561				
+oaa_c_	0.77428193	0.27812867				
+pep_c_	0.73067701	0.098994949				
+pi_c_	0.8131728	0.27930718				
+pi_e_	1.0005561	0.56568542				
+pyr_c_	0.73185552	0.17913372				
+q8_c_	0.60221928	0.79078108				
+q8h2_c_	0.6257895	0.8237794				
+r5p_c_	0.26516504	0.12727922				
+ru5p_c_	0.10017346	0.21566757				
+s7p_c_	0.1673486	0.051854497				
+succ_c_	0.57511352	0.72596296				
+succ_e_	0.79549513	0.80020917				
+succoa_c_	0.49379624	0.33941125				
+xu5p_c_	0.065996633	0.10370899				
+ACALD	0.6363961	0.49261772				
+ACALDt	0.38419468	0.74599765				
+ACKr	0.65407377	0.35826744				
+ACONTa	0.42426407	0.43604918				
+ACONTb	0.40894342	0.39951533				
+ACt2r	0.70474976	0.63875313				
+ADK1	0.89920412	0.1767767				
+AKGDH	0.51854497	0.29698485				
+ATPS4r	0.89331157	0.41130044				
+Biomass_Ecoli_core_w_GAM	0.62932504	0.16852712				
+CO2t	0.36651701	0.24159482				
+CS	0.65053824	0.41601449				
+CYTBD	0.61753992	0.68353656				
+ENO	0.51618795	0.15438498				
+FBA	0.27695016	0.20270394				
+FORti	0.42544258	0.68471507				
+FRD7	0.54800776	0.87327687				
+FUM	0.53975818	0.58100607				
+FUMt2_2	0.72596296	0.74128361				
+G6PDH2r	0.63875313	0.31348401				
+GAPD	0.67646549	0.32880465				
+GLCpts	0.64818122	0.082495791				
+GLUDy	0.69532167	0.39008724				
+GLUN	0.63050355	0.43958472				
+GND	0.41837151	0.24159482				
+H2Ot	0.42072853	0.35826744				
+ICDHyr	0.51972348	0.20977501				
+ICL	0.41837151	0.59868374				
+MALS	0.52797306	0.46433345				
+MDH	0.78488853	0.40540789				
+ME2	0.60693332	0.1767767				
+NADH16	0.67528698	0.64818122				
+NADTRHD	0.7401051	0.26516504				
+NH4t	0.4277996	0.53504413				
+O2t	0.17795521	0.9593082				
+PDH	0.59986225	0.25102291				
+PFK	0.71771338	0.25809398				
+PFL	0.51500944	0.39244426				
+PGI	0.48908219	0.048318963				
+PGK	0.72360594	0.14967094				
+PGL	0.62696801	0.52208051				
+PGM	0.42897811	0.077781746				
+PIt2r	0.92041733	0.51972348				
+PPC	0.76603235	0.35944595				
+PPCK	0.75896128	0.15792051				
+PPS	0.90038263	0.25573695				
+PTAr	0.61164737	0.30641294				
+PYK	0.84381409	0.16381307				
+RPE	0	0.16499158				
+RPI	0.12845773	0.16027754				
+SUCCt2_2	0.7507117	0.70592827				
+SUCCt3	0.77546044	0.72360594				
+SUCOAS	0.66350186	0.40069384				
+TALA	0.2710576	0.05421152				
+TKT1	0.15792051	0.13317178				
+TKT2	0.24513035	0.09074537				
+TPI	0.22391715	0.17559818				
+						
+!!SBtab TableID='MetaboliteConcentration' TableType='Quantity' TableName='Metabolite concentration'						
+!QuantityType	!Metabolite	!Value				
+concentration	_13dpg_c_	0.10158844				
+concentration	_2pg_c_	1				
+concentration	_3pg_c_	1.5916401				
+concentration	_6pgc_c_	0.55707762				
+concentration	_6pgl_c_	0.99999999				
+concentration	ac_c_	0.98759439				
+concentration	ac_e_	1				
+concentration	acald_c_	0.95573709				
+concentration	acald_e_	0.99762193				
+concentration	accoa_c_	1.212				
+concentration	acon_c_	0.0322				
+concentration	actp_c_	1.008899				
+concentration	adp_c_	2.3409102				
+concentration	akg_c_	1.2738972				
+concentration	amp_c_	1				
+concentration	atp_c_	6.898279				
+concentration	cit_c_	1				
+concentration	co2_c_	1.2784408				
+concentration	co2_e_	0.999998				
+concentration	coa_c_	2.74				
+concentration	dhap_c_	2.6405778				
+concentration	e4p_c_	0.053273582				
+concentration	f6p_c_	0.97707648				
+concentration	fdp_c_	2.3219162				
+concentration	for_c_	1.0070906				
+concentration	for_e_	0.99295931				
+concentration	fum_c_	1.0964845				
+concentration	fum_e_	1				
+concentration	g3p_c_	0.92803025				
+concentration	g6p_c_	1.8983213				
+concentration	glc__D_e_	1.0225566				
+concentration	gln_c_	0.99687208				
+concentration	glu_c_	0.94221334				
+concentration	glx_c_	0.97680002				
+concentration	h2o_c_	0.59539922				
+concentration	h2o_e_	0.99294404				
+concentration	h_c_	1.7296865				
+concentration	h_e_	0.986902				
+concentration	icit_c_	0.016321744				
+concentration	mal_c_	3.3706848				
+concentration	nad_c_	4.2256266				
+concentration	nadh_c_	0.05483026				
+concentration	nadp_c_	0.022576396				
+concentration	nadph_c_	0.22778314				
+concentration	nh4_c_	0.99797584				
+concentration	nh4_e_	1.0020283				
+concentration	o2_c_	0.99814906				
+concentration	o2_e_	1.0018544				
+concentration	oaa_c_	0.80674458				
+concentration	pep_c_	0.70631542				
+concentration	pi_c_	1.8803798				
+concentration	pi_e_	1.014088				
+concentration	pyr_c_	2.8103082				
+concentration	q8_c_	1.0625137				
+concentration	q8h2_c_	0.94116431				
+concentration	r5p_c_	0.99719598				
+concentration	ru5p_c_	1.317512				
+concentration	s7p_c_	0.97779839				
+concentration	succ_c_	2.3706508				
+concentration	succ_e_	1.031042				
+concentration	succoa_c_	0.466				
+concentration	xu5p_c_	1.0772307				
+						
+!!SBtab TableID='Flux' TableType='Quantity' TableName='Metabolic flux'						
+!QuantityType	!Reaction	!Value				
+rate of reaction	ACALD	-0.20511348				
+rate of reaction	ACALDt	-0.20511348				
+rate of reaction	ACKr	-0.226108				
+rate of reaction	ACONTa	0.154				
+rate of reaction	ACONTb	0.154				
+rate of reaction	ACt2r	-0.226108				
+rate of reaction	ADK1	-0.021766248				
+rate of reaction	AKGDH	0.11904906				
+rate of reaction	ATPS4r	0.59540981				
+rate of reaction	Biomass_Ecoli_core_w_GAM	0.026323062				
+rate of reaction	CO2t	-0.69497404				
+rate of reaction	CS	0.154				
+rate of reaction	CYTBD	1.5023887				
+rate of reaction	ENO	0.88083351				
+rate of reaction	FBA	0.4436534				
+rate of reaction	FORti	0.311755				
+rate of reaction	FRD7	-0.12557109				
+rate of reaction	FUM	0.092399999				
+rate of reaction	FUMt2_2	-0.033171095				
+rate of reaction	G6PDH2r	0.15194326				
+rate of reaction	GAPD	0.9203181				
+rate of reaction	GLCpts	0.52036098				
+rate of reaction	GLUDy	-0.13687992				
+rate of reaction	GLUN	-0.0068439961				
+rate of reaction	GND	0.15194326				
+rate of reaction	H2Ot	-0.95347458				
+rate of reaction	ICDHyr	0.14747796				
+rate of reaction	ICL	0.006522037				
+rate of reaction	MALS	0.006522037				
+rate of reaction	MDH	0.0602				
+rate of reaction	ME2	0.038722036				
+rate of reaction	NADH16	1.3768177				
+rate of reaction	NADTRHD	0.010217104				
+rate of reaction	NH4t	0.14372392				
+rate of reaction	O2t	0.75119437				
+rate of reaction	PDH	0.3787				
+rate of reaction	PFK	0.4436534				
+rate of reaction	PFL	0.311755				
+rate of reaction	PGI	0.36315311				
+rate of reaction	PGK	-0.9203181				
+rate of reaction	PGL	0.15194326				
+rate of reaction	PGM	-0.88083351				
+rate of reaction	PIt2r	0.096868869				
+rate of reaction	PPC	0.2114				
+rate of reaction	PPCK	0.070481718				
+rate of reaction	PPS	-0.021766248				
+rate of reaction	PTAr	0.226108				
+rate of reaction	PYK	0.1841				
+rate of reaction	RPE	0.082342904				
+rate of reaction	RPI	-0.069600359				
+rate of reaction	SUCCt2_2	1.2722212				
+rate of reaction	SUCCt3	1.2722212				
+rate of reaction	SUCOAS	-0.11904906				
+rate of reaction	TALA	0.045909603				
+rate of reaction	TKT1	0.045909603				
+rate of reaction	TKT2	0.036433301				
+rate of reaction	TPI	0.4436534				
+						
+!!SBtab TableID='ReactionGibbsFreeEnergy' TableType='Quantity' TableName='Reaction Gibbs free Energy'						
+!QuantityType	!Reaction	!Value				
+Gibbs free energy of reaction	ACALD	0.49579138				
+Gibbs free energy of reaction	ACALDt	0.49579168				
+Gibbs free energy of reaction	ACKr	0.49579139				
+Gibbs free energy of reaction	ACONTa	-1.4835821				
+Gibbs free energy of reaction	ACONTb	-1.092841				
+Gibbs free energy of reaction	ACt2r	1.3945066				
+Gibbs free energy of reaction	ADK1	14.683657				
+Gibbs free energy of reaction	AKGDH	-24.789569				
+Gibbs free energy of reaction	ATPS4r	-0.49579139				
+Gibbs free energy of reaction	Biomass_Ecoli_core_w_GAM	-24.789569				
+Gibbs free energy of reaction	CO2t	0.60447575				
+Gibbs free energy of reaction	CS	-23.341679				
+Gibbs free energy of reaction	CYTBD	-3.9205843				
+Gibbs free energy of reaction	ENO	-6.2309277				
+Gibbs free energy of reaction	FBA	-0.96552688				
+Gibbs free energy of reaction	FORti	-0.49579141				
+Gibbs free energy of reaction	FRD7	4.8595402				
+Gibbs free energy of reaction	FUM	-0.49579144				
+Gibbs free energy of reaction	FUMt2_2	2.9807722				
+Gibbs free energy of reaction	G6PDH2r	-0.82823749				
+Gibbs free energy of reaction	GAPD	-0.49579139				
+Gibbs free energy of reaction	GLCpts	-0.49579139				
+Gibbs free energy of reaction	GLUDy	13.642346				
+Gibbs free energy of reaction	GLUN	5.2263474				
+Gibbs free energy of reaction	GND	-0.49579139				
+Gibbs free energy of reaction	H2Ot	0.49579141				
+Gibbs free energy of reaction	ICDHyr	-0.49579138				
+Gibbs free energy of reaction	ICL	-0.49579138				
+Gibbs free energy of reaction	MALS	-0.49579138				
+Gibbs free energy of reaction	MDH	-0.49579138				
+Gibbs free energy of reaction	ME2	-10.600032				
+Gibbs free energy of reaction	NADH16	-0.49579138				
+Gibbs free energy of reaction	NADTRHD	-12.447869				
+Gibbs free energy of reaction	NH4t	-0.4957919				
+Gibbs free energy of reaction	O2t	-0.49579211				
+Gibbs free energy of reaction	PDH	-24.789569				
+Gibbs free energy of reaction	PFK	-0.49579138				
+Gibbs free energy of reaction	PFL	-4.5857796				
+Gibbs free energy of reaction	PGI	-12.89928				
+Gibbs free energy of reaction	PGK	0.49579138				
+Gibbs free energy of reaction	PGL	-23.4338				
+Gibbs free energy of reaction	PGM	1.6039014				
+Gibbs free energy of reaction	PIt2r	-0.49579139				
+Gibbs free energy of reaction	PPC	-0.49579138				
+Gibbs free energy of reaction	PPCK	-16.926943				
+Gibbs free energy of reaction	PPS	20.91892				
+Gibbs free energy of reaction	PTAr	-0.49579147				
+Gibbs free energy of reaction	PYK	-20.060375				
+Gibbs free energy of reaction	RPE	-3.8684906				
+Gibbs free energy of reaction	RPI	0.49579139				
+Gibbs free energy of reaction	SUCCt2_2	-0.49579138				
+Gibbs free energy of reaction	SUCCt3	-0.49579139				
+Gibbs free energy of reaction	SUCOAS	0.49579138				
+Gibbs free energy of reaction	TALA	-1.6741301				
+Gibbs free energy of reaction	TKT1	-0.49579139				
+Gibbs free energy of reaction	TKT2	-0.49579138				
+Gibbs free energy of reaction	TPI	-0.49579139				
+						
+!!SBtab TableID='EquilibriumConstant' TableType='Quantity' TableName='Equilibrium constant'						
+!QuantityType	!Reaction	!Value				
+equilibrium constant	ACALD	0.0085045494				
+equilibrium constant	ACALDt	0.78435651				
+equilibrium constant	ACKr	0.2838273				
+equilibrium constant	ACONTa	0.034880001				
+equilibrium constant	ACONTb	1.3230001				
+equilibrium constant	ACt2r	0.98619996				
+equilibrium constant	ADK1	0.002126				
+equilibrium constant	AKGDH	48.78155				
+equilibrium constant	ATPS4r	6.2170402				
+equilibrium constant	Biomass_Ecoli_core_w_GAM	36.925339				
+equilibrium constant	CO2t	1.001802				
+equilibrium constant	CS	99989.998				
+equilibrium constant	CYTBD	1.065				
+equilibrium constant	ENO	5.193				
+equilibrium constant	FBA	1.5580004				
+equilibrium constant	FORti	1.2042643				
+equilibrium constant	FRD7	0.3437				
+equilibrium constant	FUM	6.3061789				
+equilibrium constant	FUMt2_2	1.012				
+equilibrium constant	G6PDH2r	12.840016				
+equilibrium constant	GAPD	0.00159585				
+equilibrium constant	GLCpts	9.0218691				
+equilibrium constant	GLUDy	0.1611				
+equilibrium constant	GLUN	0.1924				
+equilibrium constant	GND	37.260215				
+equilibrium constant	H2Ot	0.49093567				
+equilibrium constant	ICDHyr	1229.6296				
+equilibrium constant	ICL	173.28684				
+equilibrium constant	MALS	27.680789				
+equilibrium constant	MDH	0.0065610508				
+equilibrium constant	ME2	773.8				
+equilibrium constant	NADH16	8.9539175				
+equilibrium constant	NADTRHD	0.195				
+equilibrium constant	NH4t	1.2164634				
+equilibrium constant	O2t	1.2168858				
+equilibrium constant	PDH	57.51124				
+equilibrium constant	PFK	1.703681				
+equilibrium constant	PFL	1.008				
+equilibrium constant	PGI	93.63				
+equilibrium constant	PGK	0.017733095				
+equilibrium constant	PGL	20630				
+equilibrium constant	PGM	0.83339998				
+equilibrium constant	PIt2r	3.9693756				
+equilibrium constant	PPC	5.9610171				
+equilibrium constant	PPCK	350.8				
+equilibrium constant	PPS	7.448e-05				
+equilibrium constant	PTAr	1.4815249				
+equilibrium constant	PYK	22160				
+equilibrium constant	RPE	3.893				
+equilibrium constant	RPI	1.0817208				
+equilibrium constant	SUCCt2_2	8.6265444				
+equilibrium constant	SUCCt3	0.93102439				
+equilibrium constant	SUCOAS	0.037479903				
+equilibrium constant	TALA	0.1127				
+equilibrium constant	TKT1	1.0317657				
+equilibrium constant	TKT2	19.29874				
+equilibrium constant	TPI	0.42926163				
