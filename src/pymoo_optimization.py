@@ -15,7 +15,10 @@ import numpy as np
 import os
 import pandas as pd
 
+from threading import Lock
+
 from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.core.callback import Callback
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 
@@ -24,26 +27,28 @@ from pymoo.optimize import minimize
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-# import of a local module
+# import from local module
 from model.cell_model import MODEL
 
+# another import from a local script
+from multi_thread_utils import ThreadPool
 
 # specific problem class which inherits from pymoo's generic problem class
 class CellProblem(Problem) :
     
     cell_model_instance = None
-    n_processes = 10
-    multi_process_evaluation = False
+    n_proc = 10
+    parallel_evaluation = False
     
-    def __init__(self, n_variables, n_objectives, cell_model_instance, xl=0.0, xu=1.0, n_processes=10, multi_process_evaluation=False) :
+    def __init__(self, n_variables, n_objectives, cell_model_instance, xl=0.0, xu=1.0, n_proc=10, parallel_evaluation=False) :
         # xl and xu are the lower and upper bounds for each variable
         super().__init__(n_var=n_variables, n_obj=n_objectives, xl=0.0, xu=1.0)
         # store the instance of the cell model, to be used later to compute
         # the fitness values
         self.cell_model_instance = cell_model_instance
         # this is potentially used for multiprocessing
-        self.multi_process_evaluation = multi_process_evaluation
-        self.n_processes = n_processes
+        self.parallel_evaluation = parallel_evaluation
+        self.n_proc = n_proc
         
         
     def _evaluate(self, x, out, *args, **kwargs) :
@@ -52,28 +57,25 @@ class CellProblem(Problem) :
         # numpy array accordingly
         fitness_values = np.zeros((x.shape[0], 1, self.n_obj))
         
-        if self.multi_process_evaluation :
+        if self.parallel_evaluation :
             # now, it would be great to start a multi-process or multi-thread
             # evaluation; but the bottleneck here is the model instance ; we would
             # need to create independent copies of the model instance, so that each
             # process can run things independently. Maybe we can do it directly
             # inside a specialize multi-processing function
-            with multiprocessing.Manager() as manager :
-                temporary_results = manager.list([0.0] * x.shape[0])
-                lock = multiprocessing.Lock()
-                
-                processes = []
-                for i in range(0, x.shape[0]) :
-                    p = multiprocessing.Process(target=multiprocessing_evaluator, args=(x[i], self.cell_model_instance, i, temporary_results, lock))
-                    processes.append(p)
-                    p.start()
-                
-                for p in processes:
-                    p.join()
+            thread_pool = ThreadPool(self.n_proc)
+            thread_lock = Lock()
             
-            # convert the results inside the shared list to numpy array
-            for i in range(0, x.shape[0]) :
-                fitness_values[i,0,:] = temporary_results[i]
+            # create list of arguments for threads; a hidden argument 'thread_id'
+            # is added during ThreadPool.map(), so the function called in .map()
+            # has to accept a last argument (it's just an integer)
+            arguments = [ (x[i], self.cell_model_instance, i, fitness_values, thread_lock) 
+                         for i in range(0, x.shape[0]) ]
+            # queue function and arguments for the thread pool
+            thread_pool.map(multiprocessing_evaluator, arguments)
+
+            # wait the completion of all threads
+            thread_pool.wait_completion()
         
         else :
             # run the batch evaluation
@@ -90,9 +92,10 @@ class CellProblem(Problem) :
         
         return
     
-def multiprocessing_evaluator(individual, model, index, fitness_values, lock) :
+def multiprocessing_evaluator(individual, model, index, fitness_values, lock, thread_id) :
     """
-    Fitness function invoked during the multi-processing step
+    Fitness function invoked during the multi-processing step; 'thread_id' is
+    added by the ThreadPool class, it is supposed to be used for debugging
     """
     # copy the model
     local_model = copy.deepcopy(model)
@@ -100,21 +103,54 @@ def multiprocessing_evaluator(individual, model, index, fitness_values, lock) :
     local_model.elasticity.s.change_from_vector(individual)
     x_fitness_values = local_model.MOO.list_fitness()
     
-    with lock :
-        #print(individual, model, index, fitness_values, lock)
-        fitness_values[index] = np.array(x_fitness_values)
+    lock.acquire()
+    #print(individual, model, index, fitness_values, lock)
+    fitness_values[index,0,:] = np.array(x_fitness_values)
+    lock.release()
     
     return
     
 
+# this class here inherits from pymoo.core.callback.Callback, and it is something
+# that will be invoked at the end of each iteration of the evolutionary algorithm
+class SavePopulationCallback(Callback) :
+    
+    folder = ""
+    population_file_name = ""
+    
+    # class constructor
+    def __init__(self, folder, population_file_name, overwrite_file=False) :
+        super().__init__()
+        self.folder = folder
+        self.population_file_name = population_file_name
+        
+    # this method is called at every iteration of the algorithm
+    def notify(self, algorithm) :
+        
+        # get the current generation and other information
+        generation = algorithm.n_gen
+        X = algorithm.pop.get("X")
+        F = algorithm.pop.get("F")
+        
+        results_dictionary = dict()
+        results_dictionary["generation"] = [generation] * X.shape[0]
+        for i in range(0, F.shape[1]) :
+            results_dictionary["fitness_%d" % (i+1)] = F[:,i]
+        for i in range(0, X.shape[1]) :
+            results_dictionary["variable_%d" % i] = X[:,i]
+        df_results = pd.DataFrame.from_dict(results_dictionary)
+        df_results.to_csv(os.path.join(self.folder, self.population_file_name + "-%d.csv" % generation), index=False)
+        
+
 if __name__ == "__main__" :
     
     # hard-coded values
-    population_size = 1000
+    population_size = 100
     offspring_size = population_size
-    max_generations = 1000
+    max_generations = 100
     random_seed = 42
     results_folder = "../local" # 'local' is not under version control (git)
+    population_file_name = "%d-population-generation" % random_seed
     
     # generate the folder; the name will be different for every run, as it is
     # initialized with the current time
@@ -144,10 +180,13 @@ if __name__ == "__main__" :
     n_objectives = len(model.MOO.list_fitness())
     
     # let's start with instantiating the problem class
-    cell_problem = CellProblem(n_variables, n_objectives, model, multi_process_evaluation=True)
+    cell_problem = CellProblem(n_variables, n_objectives, model, n_proc=64, parallel_evaluation=True)
     
     # then, let's set up the algorithm
     algorithm = NSGA2(pop_size=population_size)
+    
+    # and a callback function
+    callback = SavePopulationCallback(output_folder, population_file_name)
     
     # start the run
     print("Starting the evolutionary run, population_size=%d, max_generations=%d" %
@@ -156,6 +195,7 @@ if __name__ == "__main__" :
                 cell_problem,
                 algorithm,
                 ('n_gen', max_generations), 
+                callback=callback,
                 seed=random_seed,
                 verbose=True
                         )
