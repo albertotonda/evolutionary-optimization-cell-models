@@ -129,7 +129,10 @@ if __name__ == "__main__" :
     # instantiate model
     model = MODEL()
     # initialize model with default internal values for elasticity matrix
+    # Small model of  4 chimical species and  3 reactions =>    6 elasticities but only   4 to evaluate
     model.MOO.build_model(random_seed=random_seed)
+    # Big   model of 64 chimical species and 57 reactions => 2850 elasticities but only 234 to evaluate
+    #model.MOO.build_model(random_seed=random_seed, Big=True)
     # this is just a debug printout to check that everything is in order
     print(model.MOO.vectors)
     example_individual = [0.5, 0.5, 0.5, 0.5]
