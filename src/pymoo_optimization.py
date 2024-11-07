@@ -7,17 +7,12 @@ Using pymoo to optimize Arthur's model.
 @author: Alberto
 """
 
-# instantiate MODEL class: model = MODEL()
-# call model.MOO.build_model()
-# shape of the vectors to be optimized: model.MOO.vectors["shape"]
-# values of the vectors in [0,1]
-# apply the vector to the model, model.elasticity.s.change_from_vector(individual)
-# get the fitness function, model.MOO.list_fitness()
-
 # imports
+import copy
 import datetime
-import os
+import multiprocessing
 import numpy as np
+import os
 import pandas as pd
 
 from pymoo.algorithms.moo.nsga2 import NSGA2
@@ -37,13 +32,19 @@ from model.cell_model import MODEL
 class CellProblem(Problem) :
     
     cell_model_instance = None
+    n_processes = 10
+    multi_process_evaluation = False
     
-    def __init__(self, n_variables, n_objectives, cell_model_instance, xl=0.0, xu=1.0) :
+    def __init__(self, n_variables, n_objectives, cell_model_instance, xl=0.0, xu=1.0, n_processes=10, multi_process_evaluation=False) :
         # xl and xu are the lower and upper bounds for each variable
         super().__init__(n_var=n_variables, n_obj=n_objectives, xl=0.0, xu=1.0)
         # store the instance of the cell model, to be used later to compute
         # the fitness values
         self.cell_model_instance = cell_model_instance
+        # this is potentially used for multiprocessing
+        self.multi_process_evaluation = False
+        self.n_processes = n_processes
+        
         
     def _evaluate(self, x, out, *args, **kwargs) :
         # this evaluation function starts from the assumption that 'x' is actually
@@ -51,25 +52,64 @@ class CellProblem(Problem) :
         # numpy array accordingly
         fitness_values = np.zeros((x.shape[0], 1, self.n_obj))
         
-        # run the evaluation
-        for i in range(0, x.shape[0]) :
-            # fitness values are obtained by mapping the vector the cell model's
-            # internal elasticity matrix, and then calling a method from the instance
-            self.cell_model_instance.elasticity.s.change_from_vector(x[i])
-            x_fitness_values = self.cell_model_instance.MOO.list_fitness()
-            # store the fitness values, converted to a numpy array
-            fitness_values[i,0,:] = np.array(x_fitness_values)
+        if self.multi_process_evaluation :
+            # now, it would be great to start a multi-process or multi-thread
+            # evaluation; but the bottleneck here is the model instance ; we would
+            # need to create independent copies of the model instance, so that each
+            # process can run things independently. Maybe we can do it directly
+            # inside a specialize multi-processing function
+            with multiprocessing.Manager() as manager :
+                fitness_values_shared = multiprocessing.Array('d', fitness_values.shape)
+                lock = multiprocessing.Lock()
+                
+                processes = []
+                for i in range(0, x.shape[0]) :
+                    p = multiprocessing.Process(target=multiprocessing_evaluator, args=(x[i], self.cell_model_instance, i, fitness_values_shared, lock))
+                    processes.append(p)
+                    p.start()
+                
+                for p in processes:
+                    p.join()
             
-        # place the appropriate result in the 'out' dictionary
-        out["F"] = fitness_values
+            #
+            out["F"] = np.frombuffer(fitness_values_shared.get_obj())
+        
+        else :
+            # run the batch evaluation
+            for i in range(0, x.shape[0]) :
+                # fitness values are obtained by mapping the vector the cell model's
+                # internal elasticity matrix, and then calling a method from the instance
+                self.cell_model_instance.elasticity.s.change_from_vector(x[i])
+                x_fitness_values = self.cell_model_instance.MOO.list_fitness()
+                # store the fitness values, converted to a numpy array
+                fitness_values[i,0,:] = np.array(x_fitness_values)
+                
+            # place the appropriate result in the 'out' dictionary
+            out["F"] = fitness_values
         
         return
+    
+def multiprocessing_evaluator(individual, model, index, fitness_values, lock) :
+    """
+    Fitness function invoked during the multi-processing step
+    """
+    # copy the model
+    local_model = copy.deepcopy(model)
+    # apply modifications and get fitness values
+    local_model.elasticity.s.change_from_vector(individual)
+    x_fitness_values = local_model.MOO.list_fitness()
+    
+    with lock :
+        fitness_values[index,0,:] = x_fitness_values
+    
+    return
+    
 
 if __name__ == "__main__" :
     
     # hard-coded values
-    population_size = 100
-    offspring_size = 100
+    population_size = 1000
+    offspring_size = population_size
     max_generations = 1000
     random_seed = 42
     results_folder = "../local" # 'local' is not under version control (git)
