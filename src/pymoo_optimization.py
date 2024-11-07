@@ -42,7 +42,7 @@ class CellProblem(Problem) :
         # the fitness values
         self.cell_model_instance = cell_model_instance
         # this is potentially used for multiprocessing
-        self.multi_process_evaluation = False
+        self.multi_process_evaluation = multi_process_evaluation
         self.n_processes = n_processes
         
         
@@ -59,20 +59,21 @@ class CellProblem(Problem) :
             # process can run things independently. Maybe we can do it directly
             # inside a specialize multi-processing function
             with multiprocessing.Manager() as manager :
-                fitness_values_shared = multiprocessing.Array('d', fitness_values.shape)
+                temporary_results = manager.list([0.0] * x.shape[0])
                 lock = multiprocessing.Lock()
                 
                 processes = []
                 for i in range(0, x.shape[0]) :
-                    p = multiprocessing.Process(target=multiprocessing_evaluator, args=(x[i], self.cell_model_instance, i, fitness_values_shared, lock))
+                    p = multiprocessing.Process(target=multiprocessing_evaluator, args=(x[i], self.cell_model_instance, i, temporary_results, lock))
                     processes.append(p)
                     p.start()
                 
                 for p in processes:
                     p.join()
             
-            #
-            out["F"] = np.frombuffer(fitness_values_shared.get_obj())
+            # convert the results inside the shared list to numpy array
+            for i in range(0, x.shape[0]) :
+                fitness_values[i,0,:] = temporary_results[i]
         
         else :
             # run the batch evaluation
@@ -84,8 +85,8 @@ class CellProblem(Problem) :
                 # store the fitness values, converted to a numpy array
                 fitness_values[i,0,:] = np.array(x_fitness_values)
                 
-            # place the appropriate result in the 'out' dictionary
-            out["F"] = fitness_values
+        # place the appropriate result in the 'out' dictionary
+        out["F"] = fitness_values
         
         return
     
@@ -100,7 +101,8 @@ def multiprocessing_evaluator(individual, model, index, fitness_values, lock) :
     x_fitness_values = local_model.MOO.list_fitness()
     
     with lock :
-        fitness_values[index,0,:] = x_fitness_values
+        #print(individual, model, index, fitness_values, lock)
+        fitness_values[index] = np.array(x_fitness_values)
     
     return
     
@@ -142,7 +144,7 @@ if __name__ == "__main__" :
     n_objectives = len(model.MOO.list_fitness())
     
     # let's start with instantiating the problem class
-    cell_problem = CellProblem(n_variables, n_objectives, model)
+    cell_problem = CellProblem(n_variables, n_objectives, model, multi_process_evaluation=True)
     
     # then, let's set up the algorithm
     algorithm = NSGA2(pop_size=population_size)
