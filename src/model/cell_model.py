@@ -128,7 +128,6 @@ class MODEL:
         self.__cache_R_s_c = None
         self.__cache_R_v_p = None
         self.__cache_R = None
-        self.__cache_R_augmented = None
 
         # Cache cache :)
         self.__cache_cov = None
@@ -513,7 +512,6 @@ class MODEL:
 
         # R is block matrix of the sub-response matrix
         if self.__cache_R is None:
-            self.__cache_R_augmented = None
             
             # We reset the matrices of interaction (cov, rho MI etc...)
             self._reset_value("cov")
@@ -564,37 +562,33 @@ class MODEL:
     @property
     def R_augmented(self):
 
-        if self.__cache_R_augmented is None :
-            # Creation of a identity matrix
-            Id_matrix = np.eye(self.R.shape[0])
+        # Creation of a identity matrix
+        Id_matrix = np.eye(self.R.shape[0])
 
-            # Creation of a list that will contain the added rows
-            augmented_rows = []
-            
-            # Then for each ratio that the user added to this dataframe
-            for idx, row in self.ratio.iterrows() :
-                # We add a row to this almost identity matrix
-                new_row = np.zeros(self.R.shape[0]) 
-
-                # If it is in the "Numerator" column, we add a 1 coeff
-                for num in [row['Numerator']]:
-                    if num in self.R.index:
-                        new_row[self.R.index.get_loc(num)] = 1
-                # If it is in the "Denominator" column, we add a -1 coeff
-                for denom in [row['Denominator']]:
-                    if denom in self.R.index:
-                        new_row[self.R.index.get_loc(denom)] = -1
-                
-                augmented_rows.append(new_row)
-
-            augmented_matrix = pd.DataFrame(np.vstack([Id_matrix] + augmented_rows),index=list(self.R.index) + list(self.ratio.index), columns=self.R.index)
-
-            R_augmented = augmented_matrix.dot(self.R)
-
-            self.__cache_R_augmented = R_augmented
+        # Creation of a list that will contain the added rows
+        augmented_rows = []
         
+        # Then for each ratio that the user added to this dataframe
+        for idx, row in self.ratio.iterrows() :
+            # We add a row to this almost identity matrix
+            new_row = np.zeros(self.R.shape[0]) 
 
-        return(self.__cache_R_augmented)
+            # If it is in the "Numerator" column, we add a 1 coeff
+            for num in [row['Numerator']]:
+                if num in self.R.index:
+                    new_row[self.R.index.get_loc(num)] = 1
+            # If it is in the "Denominator" column, we add a -1 coeff
+            for denom in [row['Denominator']]:
+                if denom in self.R.index:
+                    new_row[self.R.index.get_loc(denom)] = -1
+            
+            augmented_rows.append(new_row)
+
+        augmented_matrix = pd.DataFrame(np.vstack([Id_matrix] + augmented_rows),index=list(self.R.index) + list(self.ratio.index), columns=self.R.index)
+
+        R_augmented = augmented_matrix.dot(self.R)     
+
+        return(R_augmented)
 
 
     #########################################
