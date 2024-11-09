@@ -333,7 +333,7 @@ class MOO_class:
 
     ##########################################################################
     #########         Function to build a premade model             ########## 
-    def build_model(self, Big=False, random_seed=None):
+    def build_model(self, source_file=None, random_seed=None):
         """
         Big : bool
             Do we create a big model of E.Coli Core ? 
@@ -342,8 +342,8 @@ class MOO_class:
         random_seed : int
             Seed for generated the fake real data
         """
-        if Big :
-            self.__class_MODEL_instance.read_SBtab()
+        if source_file is not None :
+            self.__class_MODEL_instance.read_SBtab(filepath=source_file)
         else :
             self.__class_MODEL_instance.creat_linear(4, grec=False)
         
