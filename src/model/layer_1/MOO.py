@@ -22,9 +22,10 @@ class MOO_class:
 
         self.__cache_modified_elements = None
         self.__cache_vectors = None
+        self.__cov_is_studied = True
 
         # Fake real data of the model
-        self.real_data = {"Elasticity" : np.array([]),"Correlation" : pd.DataFrame()}
+        self.real_data = {"Elasticity" : np.array([]),"Correlation" : pd.DataFrame(), "Covariance" : pd.DataFrame()}
 
         self.result = None
 
@@ -124,11 +125,14 @@ class MOO_class:
 
     ###############################################################################################################
     #########      Function to create a false correlation matrix and the elasticity associated           ##########
-    def set_real_data(self, rho_matrix = None, random_seed=None) :
+    def set_real_data(self, seed, rho_matrix = None) :
         ### Description of the fonction
         """
         Fonction to create fake real data 
         """
+        # Seed of the random number generation
+        np.random.seed(seed)
+
         # If the user adds as input a correlation matrix, we will use this one as real data result
         if rho_matrix is not None :
             ela = None
@@ -136,12 +140,6 @@ class MOO_class:
         
         # Otherwise, we create a fake one with random numbers
         else :
-            
-            # since we are generating pseudo-random number, let's check if the
-            # random seed has been specified; in that case, we set up the random
-            # number generator from numpy to have repeatable experiments
-            if random_seed is not None :
-                np.random.seed(random_seed)
 
             # We take into memory the old value of the elasticity matrix of metabolite
             old_ela = self.__class_MODEL_instance.elasticity.s.df.copy()
@@ -155,7 +153,8 @@ class MOO_class:
                 # We look for the max value
                 max_value = self.__cache_modified_elements[(react, meta)]
                 # Then we create a random number between [0,1] (beta distribution centred on 0.5) and multiply it by the max value (with the right sign)
-                rand_value = max_value*np.random.beta(a=5, b=5)
+                rand_value =2*max_value*np.random.beta(a=5, b=5)
+
 
                 # We modify the DataFrame 'ela' at the position (react, meta)
                 ela.at[react, meta] = rand_value
@@ -167,6 +166,7 @@ class MOO_class:
             # And compute the correlation matrix with this elasticity and add both matrix into memory
             self.real_data["Elasticity"] = self.__class_MODEL_instance.elasticity.s.df.copy()
             self.real_data["Correlation"] = self.__class_MODEL_instance.correlation.copy()
+            self.real_data["Covariance"] = self.__class_MODEL_instance.correlation.copy()
 
             # And we reattribuate the previous matrix of the elasticity
             self.__class_MODEL_instance.elasticity.s.df = old_ela
@@ -192,16 +192,56 @@ class MOO_class:
         # And we finally change the correlation matrix with
         self.real_data["Correlation"] = df_masked
     
-                
+    @property
+    def cov_is_studied(self):
+        return(self.__cov_is_studied)
+    
+    @cov_is_studied.setter
+    def cov_is_studied(self, boolean):
+        self.__cov_is_studied = boolean
+    
+
     ################################################################################################################################
     ################################################################################################################################
     ##############  FITNESS - FITNESS - FITNESS - FITNESS - FITNESS - FITNESS - FITNESS - FITNESS - FITNESS - FITNESS ##############
     ################################################################################################################################
     ################################################################################################################################
 
+
     ##################################################################################################################################
-    #########      Function that return the fitness between the real data correlation matrix and the current one            ##########
-    def fitness(self, a=1) :
+    #########      Function that return the similarity between the real data correlation matrix and the current one         ##########       
+    def similarity(self) :
+        ### Description of the fonction
+        """
+        Euclidian norm\n
+        """
+        if self.__cov_is_studied == True :
+            matrix_real_data = self.real_data["Covariance"]
+            matrix_model = self.__class_MODEL_instance.covariance.loc[matrix_real_data.index, matrix_real_data.columns]
+        else :
+            matrix_real_data = self.real_data["Correlation"]
+            matrix_model = self.__class_MODEL_instance.correlation.loc[matrix_real_data.index, matrix_real_data.columns]
+
+        
+
+        # Creation of a mask to select (True) only the elements float in real_rho (cas particulier pour les bool qui sont convertis automatiquement en int)
+        mask_float = matrix_real_data.applymap(lambda x: isinstance(x, (float, int)) and not isinstance(x, bool))
+
+        # We look for the difference matrix, but only where the elements are float or int
+        matrix_diff = (matrix_real_data[mask_float] - matrix_model[mask_float]).to_numpy(dtype=np.float64)
+
+        # Remplacement of the NaN by 0
+        matrix_diff = np.nan_to_num(matrix_diff)
+
+        # L1 is more sensible to the global difference
+        #norm_L1 = np.abs(matrix_diff).sum().sum()
+        # L2 is more usefull to focus on magnitude of difference
+        #norm_L2 = np.sqrt((matrix_diff**2).sum().sum())
+         
+        return(np.linalg.norm(matrix_diff, ord='fro'))
+    
+
+    def similarity2(self, a=1) :
         ### Description of the fonction
         """
         Euclidian norm\n
@@ -227,34 +267,6 @@ class MOO_class:
         
         return(fitness)
 
-    ##################################################################################################################################
-    #########      Function that return the similarity between the real data correlation matrix and the current one         ##########       
-    def similarity(self) :
-        ### Description of the fonction
-        """
-        Euclidian norm\n
-        """
-        
-        real_rho = self.real_data["Correlation"]
-
-        current_rho = self.__class_MODEL_instance.correlation.loc[real_rho.index, real_rho.columns]
-
-        # Creation of a mask to select (True) only the elements float in real_rho (cas particulier pour les bool qui sont convertis automatiquement en int)
-        mask_float = real_rho.applymap(lambda x: isinstance(x, (float, int)) and not isinstance(x, bool))
-
-        # We look for the difference matrix, but only where the elements are float or int
-        diff_rho = (real_rho[mask_float] - current_rho[mask_float]).to_numpy(dtype=np.float64)
-
-        # Remplacement of the NaN by 0
-        diff_rho = np.nan_to_num(diff_rho)
-
-        # L1 is more sensible to the global difference
-        #norm_L1 = np.abs(diff_rho).sum().sum()  
-        # L2 is more usefull to focus on magnitude of difference
-        norm_L2 = (diff_rho**2).sum().sum()
-
-        return(norm_L2)
-    
 
 
     ##################################################################################################################
@@ -330,41 +342,78 @@ class MOO_class:
         """
         return([self.similarity(), self.prior_divergence()])
 
+    ################################################################################################################################
+    ################################################################################################################################
+    ##############  DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE  #################
+    ################################################################################################################################
+    ################################################################################################################################
+
 
     ##########################################################################
     #########         Function to build a premade model             ########## 
-    def build_model(self, source_file=None, random_seed=None):
+    def build_model(self, seed=1 , N=4, cov_is_studied=True, Big=False):
         """
+        seed : int
+            Seed for the generation of the fake real data\n
+        
+        N : int > 3 :
+            Number of metabolite in the linear model\n
+        
         Big : bool
             Do we create a big model of E.Coli Core ? 
-            else a small linear model is created
-
-        random_seed : int
-            Seed for generated the fake real data
-        """
-        if source_file is not None :
-            self.__class_MODEL_instance.read_SBtab(filepath=source_file)
-        else :
-            self.__class_MODEL_instance.creat_linear(4, grec=False)
+            else a small linear model is created\n
         
+        Cov_studied : bool
+            Do we look for the difference between covariance matrices of the model and the real data ?
+            Else, we look for the difference between correlation matrices
+        """
+        if Big :
+            self.__class_MODEL_instance.read_SBtab()
+        else :
+            self.__class_MODEL_instance.creat_linear(N, grec=False)
+    
         self.__class_MODEL_instance.enzymes.add_to_all_reaction()
         self.__class_MODEL_instance.parameters.add_externals()
         self.__class_MODEL_instance.parameters.add_enzymes()
         self.__class_MODEL_instance.parameters.remove("Temperature")
         self.__class_MODEL_instance.elasticity.s.half_satured() 
 
-        self.__class_MODEL_instance.MOO.build_data(random_seed=random_seed)
+        self.__class_MODEL_instance.MOO.build_data(seed)
+
+        self.__class_MODEL_instance.MOO.cov_is_studied = cov_is_studied
 
 
     ##########################################################################
     #########         Function to build a premade model             ########## 
-    def build_data(self, random_seed=None):
+    def build_data(self, seed):
         """
         """
 
         self.sampled_elements()
-        self.set_real_data(random_seed=random_seed)
+        self.set_real_data(seed)
         self.set_vector()
+
+    #########################################################################
+    ########  Function to interpolate the between the 2 matrices  ###########
+    def interpolate(self, N:int):
+        if N<2 : 
+            raise ValueError(f"N must be an integer egual or higher than 2")
+        else :
+
+            # Creation of the real data vector
+            vec_real_data = []
+            for (flux, meta) in self.vectors["labels"] :
+                vec_real_data.append(self.real_data["Elasticity"].at[flux, meta])
+            vec_real_data = np.abs(vec_real_data)
+
+
+            interpolated_vectors = np.array([
+                                    np.linspace(start, end, N) for start, end in zip(vec_real_data, self.vectors["sigma"])
+                                ])
+            
+            interpolated_vectors = interpolated_vectors.T
+
+            return(interpolated_vectors)
 
 
     #######################################################################
