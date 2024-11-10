@@ -235,10 +235,11 @@ class MOO_class:
 
         # L1 is more sensible to the global difference
         #norm_L1 = np.abs(matrix_diff).sum().sum()
+        
         # L2 is more usefull to focus on magnitude of difference
         #norm_L2 = np.sqrt((matrix_diff**2).sum().sum())
-         
-        return(np.linalg.norm(matrix_diff, ord='fro'))
+        #np.linalg.norm(matrix_diff, ord='fro')
+        return( (matrix_diff**2).sum().sum() )
     
 
     def similarity2(self, a=1) :
