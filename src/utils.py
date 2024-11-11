@@ -13,13 +13,13 @@ def compute_distance_from_model(model, individuals) :
     
     # copy the original elasticty matrix
     reference_elasticity_matrix = model.MOO.real_data["Elasticity"].values.copy()
-    print(reference_elasticity_matrix)
+    #print(reference_elasticity_matrix)
     
     # for each individual, update the model, get the new matrix, compute distance
     for index, individual in enumerate(individuals) :
         model.elasticity.s.change_from_vector(individual)
         individual_elasticity_matrix = model.elasticity.s.df.values
-        print(individual_elasticity_matrix)
+        #print(individual_elasticity_matrix)
         
         distances[index] = np.linalg.norm(individual_elasticity_matrix - reference_elasticity_matrix)
     
