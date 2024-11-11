@@ -35,7 +35,7 @@ if __name__ == "__main__" :
     random_seed = 42
     
     model = MODEL()
-    model.MOO.build_model(random_seed=random_seed)
+    model.MOO.build_model(seed=random_seed)
     
     # this is a bit hard-coded, but it should be the exact individual
     # corresponding to the randomly initialized elasticity matrix

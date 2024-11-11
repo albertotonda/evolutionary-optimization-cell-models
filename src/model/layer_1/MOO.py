@@ -352,7 +352,7 @@ class MOO_class:
 
     ##########################################################################
     #########         Function to build a premade model             ########## 
-    def build_model(self, seed=1 , N=4, cov_is_studied=True, Big=False):
+    def build_model(self, seed=1 , N=4, cov_is_studied=True, source_file=None):
         """
         seed : int
             Seed for the generation of the fake real data\n
@@ -368,8 +368,8 @@ class MOO_class:
             Do we look for the difference between covariance matrices of the model and the real data ?
             Else, we look for the difference between correlation matrices
         """
-        if Big :
-            self.__class_MODEL_instance.read_SBtab()
+        if source_file is not None :
+            self.__class_MODEL_instance.read_SBtab(filepath=source_file)
         else :
             self.__class_MODEL_instance.creat_linear(N, grec=False)
     

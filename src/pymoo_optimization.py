@@ -166,9 +166,9 @@ if __name__ == "__main__" :
     model = MODEL()
     # initialize model with default internal values for elasticity matrix
     # Small model of  4 chimical species and  3 reactions =>    6 elasticities but only   4 to evaluate
-    #model.MOO.build_model(random_seed=random_seed)
+    #model.MOO.build_model(seed=random_seed)
     # Big   model of 64 chimical species and 57 reactions => 2850 elasticities but only 234 to evaluate
-    model.MOO.build_model(source_file="../data/SBtab/E Coli Core/model.tsv", random_seed=random_seed)
+    model.MOO.build_model(source_file="../data/SBtab/E Coli Core/model.tsv", seed=random_seed)
     
     # get the information that we need
     n_variables = model.MOO.vectors["shape"]
