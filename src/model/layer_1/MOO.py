@@ -166,7 +166,7 @@ class MOO_class:
             # And compute the correlation matrix with this elasticity and add both matrix into memory
             self.real_data["Elasticity"] = self.__class_MODEL_instance.elasticity.s.df.copy()
             self.real_data["Correlation"] = self.__class_MODEL_instance.correlation.copy()
-            self.real_data["Covariance"] = self.__class_MODEL_instance.correlation.copy()
+            self.real_data["Covariance"] = self.__class_MODEL_instance.covariance.copy()
 
             # And we reattribuate the previous matrix of the elasticity
             self.__class_MODEL_instance.elasticity.s.df = old_ela
