@@ -7,3 +7,4 @@
 /src/.ipynb_checkpoints
 /src/__pycache__
 server-42-population-generation-1000.csv
+*.zip
