@@ -128,6 +128,10 @@ def main() :
     args["model"] = model
     args["fitness_names"] = fitness_names
     
+    # reference values
+    best_prior_individual = model.MOO.vectors["mu"]
+    
+    
     # set up cma-es
     x0 = [(individual_maximum - individual_minimum) / 2] * individual_size
     options = {

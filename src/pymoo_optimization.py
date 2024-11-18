@@ -108,8 +108,8 @@ def multiprocessing_evaluator(individual, model, index, fitness_values, lock, th
     # objectives are rescaled, we know the theoretical maximum of each
     #x_fitness_values[0] /= 7849979.802459471
     #x_fitness_values[1] /= 18.175966975371875
-    x_fitness_values[0] /= 1e20
-    x_fitness_values[1] /= 200
+    x_fitness_values[0] /= 1e6
+    x_fitness_values[1] /= 100
     
     lock.acquire()
     #print(individual, model, index, fitness_values, lock)
@@ -155,8 +155,8 @@ if __name__ == "__main__" :
     # hard-coded values
     population_size = 100
     offspring_size = population_size
-    max_generations = 1000
-    seed_initial_population_with_prior = True
+    max_generations = 10000
+    seed_initial_population_with_prior = False
     
     random_seed = 42
     results_folder = "../local" # 'local' is not under version control (git)

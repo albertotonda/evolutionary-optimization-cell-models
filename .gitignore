@@ -10,3 +10,4 @@ server-42-population-generation-1000.csv
 *.zip
 src/local_unversioned_notebook.ipynb
 src/test_large_model_reference_points.ipynb
+src/large-model-last-generation-front.png
