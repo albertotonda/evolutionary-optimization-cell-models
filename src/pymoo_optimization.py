@@ -14,6 +14,7 @@ import multiprocessing
 import numpy as np
 import os
 import pandas as pd
+import sys
 
 from threading import Lock
 
@@ -103,6 +104,13 @@ def multiprocessing_evaluator(individual, model, index, fitness_values, lock, th
     local_model.elasticity.s.change_from_vector(individual)
     x_fitness_values = local_model.MOO.list_fitness()
     
+    # HORRIBLE HACK HERE, BUT IT'S JUST TO SEE IF IT WORKS
+    # objectives are rescaled, we know the theoretical maximum of each
+    #x_fitness_values[0] /= 7849979.802459471
+    #x_fitness_values[1] /= 18.175966975371875
+    x_fitness_values[0] /= 1e20
+    x_fitness_values[1] /= 200
+    
     lock.acquire()
     #print(individual, model, index, fitness_values, lock)
     fitness_values[index,0,:] = np.array(x_fitness_values)
@@ -145,9 +153,11 @@ class SavePopulationCallback(Callback) :
 if __name__ == "__main__" :
     
     # hard-coded values
-    population_size = 1000
+    population_size = 100
     offspring_size = population_size
-    max_generations = 100
+    max_generations = 1000
+    seed_initial_population_with_prior = True
+    
     random_seed = 42
     results_folder = "../local" # 'local' is not under version control (git)
     population_file_name = "%d-population-generation" % random_seed
@@ -166,9 +176,9 @@ if __name__ == "__main__" :
     model = MODEL()
     # initialize model with default internal values for elasticity matrix
     # Small model of  4 chimical species and  3 reactions =>    6 elasticities but only   4 to evaluate
-    model.MOO.build_model(seed=random_seed)
+    #model.MOO.build_model(seed=random_seed)
     # Big   model of 64 chimical species and 57 reactions => 2850 elasticities but only 234 to evaluate
-    #model.MOO.build_model(source_file="../data/SBtab/E Coli Core/model.tsv", seed=random_seed)
+    model.MOO.build_model(source_file="../data/SBtab/E Coli Core/model.tsv", seed=random_seed)
     
     # get the information that we need
     n_variables = model.MOO.vectors["shape"]
@@ -176,9 +186,11 @@ if __name__ == "__main__" :
     
     # this is just a debug printout to check that everything is in order
     print(model.MOO.vectors)
-    example_individual = [0.5] * n_variables
+    example_individual = model.MOO.vectors["mu"]
     model.elasticity.s.change_from_vector(example_individual)
+    #half_saturated_individual = model.elasticity.s.half_satured()
     print(model.MOO.list_fitness())
+    #print(model.elasticity.s.df.values.shape)
     
     # and now, we begin for real
     print("Setting up the evolutionary algorithm...")
@@ -186,8 +198,15 @@ if __name__ == "__main__" :
     # let's start with instantiating the problem class
     cell_problem = CellProblem(n_variables, n_objectives, model, n_proc=64, parallel_evaluation=True)
     
+    # also, let's create a random initial population, possibly replacing some of the
+    # random individuals with specific individuals that are known
+    np.random.seed(random_seed)
+    initial_population = np.random.random_sample(size=(population_size, n_variables))
+    if seed_initial_population_with_prior :
+        initial_population[0] = model.MOO.vectors["mu"]
+    
     # then, let's set up the algorithm
-    algorithm = NSGA2(pop_size=population_size)
+    algorithm = NSGA2(pop_size=population_size, sampling=initial_population)
     
     # and a callback function
     callback = SavePopulationCallback(output_folder, population_file_name)
@@ -198,7 +217,7 @@ if __name__ == "__main__" :
     result = minimize(  
                 cell_problem,
                 algorithm,
-                ('n_gen', max_generations), 
+                ('n_gen', max_generations),
                 callback=callback,
                 seed=random_seed,
                 verbose=True
