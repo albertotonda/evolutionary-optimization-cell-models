@@ -196,7 +196,7 @@ if __name__ == "__main__" :
     print("Setting up the evolutionary algorithm...")
     
     # let's start with instantiating the problem class
-    cell_problem = CellProblem(n_variables, n_objectives, model, n_proc=64, parallel_evaluation=True)
+    cell_problem = CellProblem(n_variables, n_objectives, model, n_proc=64, parallel_evaluation=False)
     
     # also, let's create a random initial population, possibly replacing some of the
     # random individuals with specific individuals that are known
