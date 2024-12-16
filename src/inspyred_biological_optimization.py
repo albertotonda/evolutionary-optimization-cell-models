@@ -8,6 +8,8 @@ inspyred, because it's easier to implement new operators and hybrid genomes.
 @author: Alberto
 """
 import inspyred
+import os
+import pandas as pd
 import random
 
 @inspyred.ec.variators.mutator
@@ -15,8 +17,10 @@ def specialized_mutation(random : random.Random, candidate : dict, args : dict) 
     """
     This is a specialized mutation, tailored to the specific genome we are using.
     """
-    n_variables = args["n_variables"]
-    bounder = args['_ec'].bounder # this will be used for the values
+    n_variables_ereg = args["n_variables_ereg"]
+    n_variables_ekin = args["n_variables_ekin"]
+    bounder_ereg = args["bounder_ereg"]
+    bounder_ekin = args["bounder_ekin"]
     mutation_strength = args["mutation_strength"]
     
     # mean and stdev of the Gaussian are hard-coded, they could be self-adapted
@@ -27,8 +31,10 @@ def specialized_mutation(random : random.Random, candidate : dict, args : dict) 
     mutation_strength = args.get('mutation_strength', 0.5) 
     
     # first, let's create a new dictionary
-    child = {'arcs' : candidate['arcs'].copy(),
-             'values' : candidate['values'].copy()
+    child = {
+        'ereg_arcs' : candidate['ereg_arcs'].copy(),
+        'ereg_values' : candidate['ereg_values'].copy(),
+        'ekin_values' : candidate['ekin_values'].copy()
              }
     
     # then, we need to decide what to do; throwing some random numbers around
@@ -36,31 +42,40 @@ def specialized_mutation(random : random.Random, candidate : dict, args : dict) 
     n_mutations = 0 # this is just used to check that we mutated at least once
     while random.uniform(0, 1) < mutation_strength or n_mutations == 0 :
         
-        if random.uniform(0, 1) < 0.5 :
+        random_number = random.uniform(0, 1)
+        if random_number <= 0.34 :
             # modify one of the arcs
-            index = random.choice(range(0, n_variables))
+            index = random.choice(range(0, n_variables_ereg))
             
-            if child['arcs'][index] == 0 :
-                child['arcs'][index] = 1
+            if child['ereg_arcs'][index] == 0 :
+                child['ereg_arcs'][index] = 1
             else :
-                child['arcs'][index] = 0
+                child['ereg_arcs'][index] = 0
                 
             n_mutations += 1
             
-        else :
+        elif random_number > 0.34 and random_number <= 0.67 :
             # modify one of the values; but ONLY the values that are actually
             # 'active' (so, the arcs that are equal to 1)
-            valid_indexes = [ i for i in range(0, n_variables)
-                             if child['arcs'][i] == 1 ]
+            valid_indexes = [ i for i in range(0, n_variables_ereg)
+                             if child['ereg_arcs'][i] == 1 ]
+            
             # however, the list might be empty! in that case, we do nothing
             if len(valid_indexes) >= 1 :
                 index = random.choice(valid_indexes)                
-                child['values'][index] = random.gauss(mean, stdev)
+                child['ereg_values'][index] += random.gauss(mean, stdev)
                 n_mutations += 1
+        
+        else :
+            # modify one of the fixed ekin values
+            index = random.choice(range(0, n_variables_ekin))
+            child['ekin_values'][index] += random.gauss(mean, stdev)
+            n_mutations += 1
             
     # after potentially several iterations, apply bounder on the values
     # and return the child
-    child['values'] = bounder(child['values'], args)
+    child['ereg_values'] = bounder_ereg(child['ereg_values'], args)
+    child['ekin_values'] = bounder_ekin(child['ekin_values'], args)
     
     return child
 
@@ -72,7 +87,8 @@ def specialized_crossover(random : random.Random, parent1 : dict, parent2 : dict
     for the values).    
     """
     crossover_rate = args.get("crossover_rate", 0.8)
-    n_variables = args["n_variables"]
+    n_variables_ereg = args["n_variables_ereg"]
+    n_variables_ekin = args["n_variables_ekin"]
 
     # create copies of the parents
     child1 = {k : v.copy() for k, v in parent1.items()}
@@ -80,14 +96,19 @@ def specialized_crossover(random : random.Random, parent1 : dict, parent2 : dict
     
     if random.uniform(0, 1) < crossover_rate :    
         # select an index (this is a one-point crossover)
-        index = random.choice(range(0, n_variables))
+        index_ereg = random.choice(range(0, n_variables_ereg))
         
-        # swap parts
-        child1['arcs'][:index] = parent2['arcs'][:index]
-        child1['values'][:index] = parent2['values'][:index]
+        # swap parts; arcs and corresponding values
+        child1['ereg_arcs'][:index_ereg] = parent2['ereg_arcs'][:index_ereg]
+        child1['ereg_values'][:index_ereg] = parent2['ereg_values'][:index_ereg]
         
-        child2['arcs'][index:] = parent1['arcs'][index:]
-        child2['values'][index:] = parent1['values'][index:]
+        child2['ereg_arcs'][index_ereg:] = parent1['ereg_arcs'][index_ereg:]
+        child2['ereg_values'][index_ereg:] = parent1['ereg_values'][index_ereg:]
+        
+        # also swap ekin values
+        index_ekin = random.choice(range(0, n_variables_ekin))
+        child1['ekin_values'][:index_ekin] = parent2['ekin_values'][:index_ekin]
+        child2['ekin_values'][index_ekin:] = parent1['ekin_values'][index_ekin:]
     
     # return children as a list
     return [child1, child2]
@@ -96,13 +117,15 @@ def generator(random : random.Random, args : dict) :
     """
     Generate initial population. Each candidate is a dictionary containing
     two parts: an array of boolean values, representing the arcs in the graph,
-    and an array of real values.
+    and a corresponding array of real values; then, a real-valude array of different size
     """
-    n_variables = args["n_variables"]
+    n_variables_ereg = args["n_variables_ereg"]
+    n_variables_ekin = args["n_variables_ekin"]
     
     individual = {
-        'arcs' : [random.choice([0,1]) for _ in range(0, n_variables)], 
-        'values' : [random.uniform(0,1) for _ in range(0, n_variables)]
+        'ereg_arcs' : [random.choice([0,1]) for _ in range(0, n_variables_ereg)], 
+        'ereg_values' : [random.uniform(-1,1) for _ in range(0, n_variables_ereg)],
+        'ekin_values' : [random.uniform(0,1) for _ in range(0, n_variables_ekin)]
                   }
     
     return individual
@@ -114,17 +137,26 @@ def evaluator(candidate, args) :
     problem, I will try at the same time to minimize the number of arcs at 1,
     and maximize the sum of all values that have corresponding arcs at 1.
     """
-    n_variables = args["n_variables"]
+    n_variables_ereg = args["n_variables_ereg"]
+    n_variables_ekin = args["n_variables_ekin"]
     
     # first fitness function: minimize number of arcs at 1
-    fitness_min_arcs = sum(candidate['arcs'])
+    fitness_min_arcs = sum(candidate['ereg_arcs'])
+    # and also minimize the sum of ekin_values
+    fitness_min_arcs += sum(candidate['ekin_values'])
     
-    # second fitness function: maximize sum of values that have arcs at 1
-    valid_indexes = [i for i in range(0, n_variables) 
-                     if candidate['arcs'][i] == 1]
-    fitness_max_values = sum([candidate['values'][i] for i in valid_indexes])
+    # second fitness function: minimize sum of values that have arcs at 1,
+    # this should lead to a negative number, as ereg_values can range in (-1,1)
+    valid_indexes = [i for i in range(0, n_variables_ereg) 
+                     if candidate['ereg_arcs'][i] == 1]
+    fitness_min_values = sum([candidate['ereg_values'][i] for i in valid_indexes])
     
-    return inspyred.ec.emo.Pareto([fitness_min_arcs, -fitness_max_values])
+    # let's also add ekin_values to the mix; these values range in (0,1), so we
+    # add them up and subtract them from the fitness_min_values, creating a
+    # pressure to maximize the sum
+    fitness_min_values += -sum(candidate['ekin_values'])
+    
+    return inspyred.ec.emo.Pareto([fitness_min_arcs, fitness_min_values])
 
 def observer(population, num_generations, num_evaluations, args) :
     """
@@ -134,6 +166,7 @@ def observer(population, num_generations, num_evaluations, args) :
     fitness_names = args["fitness_names"]
     mutation_strength = args["mutation_strength"]
     mutation_strength_decay = args["mutation_strength_decay"]
+    output_folder = args["output_folder"]
     
     # find the lowest values for each fitness
     best_fitness_values = [ min([i.fitness[f] for i in population]) 
@@ -141,6 +174,32 @@ def observer(population, num_generations, num_evaluations, args) :
     
     print("Generation: %d, Evaluations: %d, Best fitness values: %s" % 
           (num_generations, num_evaluations, str(best_fitness_values)))
+    
+    # save population
+    if num_generations % 10 == 0 :
+        
+        file_name = os.path.join(output_folder, "population-generation-%d.csv" % num_generations)
+        
+        # we are going to create a dictionary, then convert it to a DatFrame
+        # and save it as a CSV
+        population_dictionary = {}
+        population_dictionary['generation'] = [num_generations] * len(population)
+        for i, fitness_name in enumerate(fitness_names) :
+            population_dictionary[fitness_name] = [individual.fitness[i] for
+                                                   individual in population]
+        
+        for i in range(0, len(population[0].candidate['ereg_arcs'])) :
+            population_dictionary['ereg_arcs_%d' % i] = [individual.candidate['ereg_arcs'][i] for
+                                                         individual in population]
+        for i in range(0, len(population[0].candidate['ereg_values'])) :
+            population_dictionary['ereg_values_%d' % i] = [individual.candidate['ereg_values'][i] for
+                                                           individual in population]
+        for i in range(0, len(population[0].candidate['ekin_values'])) :
+            population_dictionary['ekin_values_%d' % i] = [individual.candidate['ekin_values'][i] for
+                                                           individual in population]
+        
+        df = pd.DataFrame.from_dict(population_dictionary)
+        df.to_csv(file_name, index=False)
     
     # update hyperparameters
     args["mutation_strength"] = mutation_strength * mutation_strength_decay
@@ -151,10 +210,12 @@ if __name__ == "__main__" :
     
     # hard-coded values
     fitness_names = ["fitness_1", "fitness_2"]
-    n_variables = 10
+    output_folder = "../local/" + os.path.basename(__file__)
+    n_variables_ereg = 10 # ekin and ereg are the two parts of the elasticity matrix
+    n_variables_ekin = 5
     population_size = 100
     offspring_size = 100
-    max_generations = 1000
+    max_generations = 200
     
     initial_mutation_strength = 0.9
     mutation_strength_decay = 0.99
@@ -168,11 +229,18 @@ if __name__ == "__main__" :
     
     # then, set up NSGA2
     nsga2 = inspyred.ec.emo.NSGA2(prng)
-    bounder = inspyred.ec.Bounder(lower_bound=0.0, upper_bound=1.0)
+    
+    # specific bounders for each separate set of values
+    bounder_ereg = inspyred.ec.Bounder(lower_bound=-1.0, upper_bound=1.0)
+    bounder_ekin = inspyred.ec.Bounder(lower_bound=0.0, upper_bound=1.0)
     
     nsga2.observer = observer
     nsga2.variator = [specialized_crossover, specialized_mutation]
     nsga2.terminator = inspyred.ec.terminators.generation_termination
+    
+    # create the output folder
+    if not os.path.exists(output_folder) :
+        os.makedirs(output_folder)
     
     final_archive = nsga2.evolve(
         generator = generator,
@@ -180,14 +248,17 @@ if __name__ == "__main__" :
         pop_size = population_size,
         num_selected = offspring_size,
         maximize = False,
-        bounder = bounder,
         max_generations = max_generations,
         
         # all this stuff below will end up in 'args'
-        n_variables = n_variables,
+        n_variables_ereg = n_variables_ereg,
+        n_variables_ekin = n_variables_ekin,
+        bounder_ereg = bounder_ereg,
+        bounder_ekin = bounder_ekin,
         mutation_strength = initial_mutation_strength,
         mutation_strength_decay = mutation_strength_decay,
         fitness_names = fitness_names,
+        output_folder = output_folder,
         )
     
     import matplotlib.pyplot as plt
