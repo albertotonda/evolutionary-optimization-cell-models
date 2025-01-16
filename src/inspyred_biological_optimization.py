@@ -210,7 +210,7 @@ if __name__ == "__main__" :
     
     # hard-coded values
     fitness_names = ["fitness_1", "fitness_2"]
-    output_folder = "../local/" + os.path.basename(__file__)
+    output_folder = "../local/" + os.path.basename(__file__)[:-3]
     n_variables_ereg = 10 # ekin and ereg are the two parts of the elasticity matrix
     n_variables_ekin = 5
     population_size = 100
