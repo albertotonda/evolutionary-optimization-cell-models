@@ -208,6 +208,9 @@ def observer(population, num_generations, num_evaluations, args) :
     
 if __name__ == "__main__" :
     
+    # TODO modify the code so that ereg is numbers in (0,1) with booleans
+    # associated
+    
     # hard-coded values
     fitness_names = ["fitness_1", "fitness_2"]
     output_folder = "../local/" + os.path.basename(__file__)[:-3]
