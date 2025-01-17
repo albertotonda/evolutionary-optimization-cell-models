@@ -35,6 +35,12 @@ class Reaction_class:
         return len(self.df)
 
     #################################################################################
+    #########         Fonction to return a list of the reactions           ##########
+    @property
+    def list(self):
+        return(list(self.df.index))
+
+    #################################################################################
     #########           Fonction to add a reaction                         ##########
     def add(self, name: str, metabolites={}, k_eq=1.0, reversible=True, flux=1.0, DF = 1.0) -> None:
         ### Description of the fonction
@@ -93,6 +99,7 @@ class Reaction_class:
 
                 # Updating the elasticity matrix
                 self.__class_MODEL_instance._update_elasticity()
+
 
     #################################################################################
     #########           Fonction to change a reaction                      ##########

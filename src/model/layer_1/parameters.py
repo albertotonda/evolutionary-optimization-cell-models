@@ -34,6 +34,12 @@ class Parameter_class:
     @property
     def len(self):
         return len(self.df)
+    
+    #################################################################################
+    #########         Fonction to return a list of the parameters          ##########
+    @property
+    def list(self):
+        return(list(self.df.index))
 
     #################################################################################
     #########           Fonction to add a parameters                       ##########

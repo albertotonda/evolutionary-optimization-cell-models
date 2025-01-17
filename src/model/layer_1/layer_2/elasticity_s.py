@@ -18,10 +18,10 @@ class Sub_Elasticity_class:
         # Private attribute for the instance of the Main class
         self.__class_MODEL_instance = class_MODEL_instance
 
-        self.__df = pd.DataFrame()
-        self.thermo = pd.DataFrame()
-        self.enzyme = pd.DataFrame()
-        self.regulation = pd.DataFrame()
+        self.__df = pd.DataFrame(dtype='float64')
+        self.thermo = pd.DataFrame(dtype='float64')
+        self.enzyme = pd.DataFrame(dtype='float64')
+        self.regulation = pd.DataFrame(dtype='float64')
 
     #################################################################################
     #########           Return the Dataframe of the elasticity p           ##########
@@ -39,22 +39,13 @@ class Sub_Elasticity_class:
     # For the E_s matrix
     @property
     def df(self):
-        if (
-            self.thermo.eq(0).all().all()
-            and self.enzyme.eq(0).all().all()
-            and self.regulation.eq(0).all().all()
-        ):
-            return self.__df
-        else:
-            self.__df = self.thermo - self.enzyme + self.regulation
-            return self.__df
+        df = self.thermo + self.enzyme + self.regulation
+        return df.astype('float64')
 
     @df.setter
     def df(self, matrix):
 
         # If the new matrix is a np one
-        
-
         if isinstance(matrix, np.ndarray):
             
             # If the new matrix don't have the same shape as the previous one
@@ -66,16 +57,16 @@ class Sub_Elasticity_class:
             # Else, we atribute the value of the np matrix to the elasticity dataframe
             else:
 
-                self.__df.values[:] = matrix
-                # And we reset the value of the Jacobian (and everything downstream with a waterfall effect)
+                self.thermo.values[:] = matrix
 
+                # And we reset the value of the Jacobian (and everything downstream with a waterfall effect)
                 self.__class_MODEL_instance._reset_value(session="E_s")
 
         # If the new matrix is a dataframe
         elif isinstance(matrix, pd.DataFrame):
             
             # We attribute this dataframe as the new elasticity matrix
-            self.__df = matrix
+            self.thermo = matrix.astype('float64')
 
             # And we reset the value of the Jacobian (and everything downstream with a waterfall effect)
             self.__class_MODEL_instance._reset_value(session="E_s")
@@ -94,73 +85,106 @@ class Sub_Elasticity_class:
         Method to reset the value of the elasticity E_s and sub_elasticities
         """
         # Reset of the sub_elasticity dataframe
-        self.thermo.fillna(0, inplace=True)
-        self.enzyme.fillna(0, inplace=True)
-        self.regulation.fillna(0, inplace=True)
+        self.thermo.fillna(0., inplace=True)
+        self.enzyme.fillna(0., inplace=True)
+        self.regulation.fillna(0., inplace=True)
 
-        # Reset of the main elasticity dataframe
-        self.df.fillna(0, inplace=True)
         # Reset of the value of the system
         self.__class_MODEL_instance._reset_value(session="E_s")
 
 
     #################################################################################
     #########        Fonction to change a coefficient of the matrix        ##########
-    def change(self, flux_name: str, metabolite_name: str, value: float):
+    def change(self, flux_name: str, metabolite_name: str, value: float, matrix2modify="thermo"):
+        # If the reaction name isn't in the elasticity matrix rows
         if flux_name not in self.df.index:
             raise NameError(f"The flux name '{flux_name}' is not in the model")
+        # If the matabolite name isn't in the elasticity matrix columns
         elif metabolite_name not in self.df.columns:
-            raise NameError(
-                f"The parameter name '{metabolite_name}' is not in the model"
-            )
+            raise NameError(f"The parameter name '{metabolite_name}' is not in the model")
         else:
-            self.df.at[flux_name, metabolite_name] = value
+            # If the submatrix to modify is the thermo one
+            if matrix2modify[0].lower() == "t":
+                self.thermo.at[flux_name, metabolite_name] = value
+            # If the submatrix to modify is the regulation one
+            elif matrix2modify[0].lower() == "r" :
+                self.regulation.at[flux_name, metabolite_name] = value
+            # If the submatrix to modify is the enzyme one
+            else :
+                self.enzyme.at[flux_name, metabolite_name] = value
+            
+            # Then we reset the result of the model
             self.__class_MODEL_instance._reset_value(session="E_s")
 
     #################################################################################
     #########        Fonction to change the matrix from vectors       ##########
-    def change_from_vector(self, vec_values, vec_coordonate=None):
+    def change_from_vector(self, vec_values, vec_coordonate=None, matrix2modify="thermo"):
 
         if vec_coordonate is None :
             vec_coordonate = self.__class_MODEL_instance.MOO.vectors["coordinates"]
         
         vec_values = self.__class_MODEL_instance.MOO.vectors["sign"] * ( (self.__class_MODEL_instance.MOO.vectors["max"]-self.__class_MODEL_instance.MOO.vectors["min"])*vec_values + self.__class_MODEL_instance.MOO.vectors["min"] )
+        
         if isinstance(vec_coordonate[0][0], (int, np.integer)) and isinstance(vec_coordonate[0][1], (int, np.integer)):  
-            for (row,column), value in zip(vec_coordonate, vec_values) :
-                self.df.iloc[row, column] = value
-        else : 
-            for (index,column), value in zip(vec_coordonate, vec_values) :
-                self.df.loc[index, column] = value
+            # If the submatrix to modify is the thermo one
+            if matrix2modify[0].lower() == "t":
+                for (row,column), value in zip(vec_coordonate, vec_values) :
+                    self.thermo.iloc[row, column] = value
+            # If the submatrix to modify is the regulation one
+            elif matrix2modify[0].lower() == "r" :
+                for (row,column), value in zip(vec_coordonate, vec_values) :
+                    self.regulation.iloc[row, column] = value
+            # If the submatrix to modify is the enzyme one
+            else:
+                for (row,column), value in zip(vec_coordonate, vec_values) :
+                    self.enzyme.iloc[row, column] = value
 
+
+        else :
+            # If the submatrix to modify is the thermo one
+            if matrix2modify[0].lower() == "t":
+                for (index,column), value in zip(vec_coordonate, vec_values) :
+                    self.thermo.loc[index, column] = value
+            # If the submatrix to modify is the regulation one
+            elif matrix2modify[0].lower() == "r" :
+                for (index,column), value in zip(vec_coordonate, vec_values) :
+                    self.regulation.loc[index, column] = value
+            # If the submatrix to modify is the enzyme one
+            else:
+                for (index,column), value in zip(vec_coordonate, vec_values) :
+                    self.enzyme.loc[index, column] = value
+            
+        # Then we reset the result of the model
         self.__class_MODEL_instance._reset_value(session="E_s")
     #################################################################################
     #########     Fonction to update the elasticities matrix               ##########
-    def half_satured(self, we_return=False):
+    def half_satured(self, returned=False):
         ### Description of the fonction
         """
         Method to attribute to the E_s matrix the value of a half-satured enzyme
         """
         self.reset()
-        self.__df = -0.5 * self.__class_MODEL_instance.N_without_ext.transpose()
-
+        # df = self.__class_MODEL_instance.N_without_ext.copy()
+        # self.thermo = -(df / (df.abs() + 1)).transpose()
+        self.thermo = -0.5*self.__class_MODEL_instance.N_without_ext.transpose()
         self.norm_GR()
 
-        if we_return :
+        if returned :
             return(self.df)
 
     #################################################################################
     #########        Fonction nromalize the growth rate fluxes             ##########    
-    def norm_GR(self, df=False):
+    def norm_GR(self, df=False, max_meta_implied=6):
         """
         df : pd.Dataframe
-        You can normalise a dataframe that isn't the model
+        You can normalise a dataframe that isn't in the model
         """
-        max_meta_implied = 6
+
         if df==False :
             for index, row in self.df.iterrows():
                 if row[(row != 0)].count() > max_meta_implied :
                     sum_ela = row.abs().sum()
-                    self.df.loc[index] = row / sum_ela
+                    self.thermo.loc[index] = row / sum_ela
         
         elif isinstance(df, pd.DataFrame()) : 
             for index, row in df.iterrows():
@@ -200,9 +224,7 @@ class Sub_Elasticity_class:
         ]
         c_int = c_int_df["Concentration"].to_numpy()
 
-        k_eq = self.__class_MODEL_instance.reactions.df[
-            "Equilibrium constant"
-        ].to_numpy()
+        k_eq = self.__class_MODEL_instance.reactions.df["Equilibrium constant"].to_numpy()
 
         zeta = np.exp(
             np.log(k_eq) - np.dot(np.transpose(N_red.to_numpy()), np.log(c_int))
@@ -258,7 +280,7 @@ class Sub_Elasticity_class:
         flux       : str
             Name of the flux \n
         
-        parameter  : str
+        metabolite  : str
             Name of the metabolite
         """
         if flux not in self.df.index :

@@ -71,7 +71,7 @@ class Regulation_class:
         else:
             type_regulation = "transcriptional"
 
-        # Look if the metabolite class was well intialised
+        # Look if the Regulation Class was well intialised
         if type(self.df) != type(pd.DataFrame()):
             self.df = pd.DataFrame(
                 columns=[
@@ -95,16 +95,12 @@ class Regulation_class:
                 f'The reaction "{regulated}" is not in the reaction dataframe !'
             )
 
-        #  Look if the regulator metabolite is in the model
-        elif regulator not in self.__class_MODEL_instance.metabolites.df.index:
+        # We look if the regulator is in the metabolites dataframe
+        if regulator not in self.__class_MODEL_instance.metabolites.df.index :
             raise NameError(
-                f'The metabolite "{regulator}" is not in the metabolite dataframe !'
-            )
-        elif regulator not in self.__class_MODEL_instance.N_without_ext.index:
-            raise NameError(
-                f'The metabolite "{regulator}" is in the metabolite dataframe but is external !'
-            )
+                f'The metabolite "{regulator}" is not in the metabolite dataframe !')
 
+        # We look if the inputs are in the right type
         if not isinstance(coefficient, (int,float)) :
             raise TypeError(f"The input argument 'coefficient' must be a float, not a {type(coefficient)} !\n")
         if not isinstance(allosteric, bool) :
@@ -120,9 +116,17 @@ class Regulation_class:
 
             # If the regulation is allosteric
             if allosteric == True :
-                self.__class_MODEL_instance.elasticity.s.df.at[
-                    regulated, regulator
-                ] += coefficient
+                # If the regulator is an internal metabolite
+                if self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == False:
+                    self.__class_MODEL_instance.elasticity.s.regulation.at[
+                        regulated, regulator
+                    ] += float(coefficient)
+                
+                # If the regulator is an external metabolite
+                elif self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == True:
+                    self.__class_MODEL_instance.elasticity.p.df.at[
+                        regulated, regulator+"_para"
+                    ] += coefficient
 
             # Else, it is a transcriptionnal regulation
             else:
@@ -137,14 +141,74 @@ class Regulation_class:
                 self.__class_MODEL_instance.reactions.add(
                     name="destruction_" + name, metabolites={enzyme: -1}
                 )
-                self.__class_MODEL_instance.elasticity.s.df.at[
-                    "creation_" + name, regulator
-                ] += coefficient
+                if self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == False:
+                    self.__class_MODEL_instance.elasticity.s.regulation.at[
+                        "creation_" + name, regulator
+                    ] += coefficient
+                elif self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == True:
+                    self.__class_MODEL_instance.elasticity.p.df.at[
+                        "creation_" + name, regulator
+                    ] += coefficient
 
                 default_name = "para_trans_" + name
                 name_new_para = kwargs.get('name_parameter', default_name)
 
                 self.__class_MODEL_instance.parameters.add(name=name_new_para)
+
+            self.__class_MODEL_instance._update_elasticity()
+
+
+    ######################################################################################################
+    #########           Fonction to add differnet regulation arrows from vectors                ##########
+    def add_from_vector(
+        self, arrow_labels, coefficients:list, signs:list, activated:list, **kwargs):
+        ### Description of the fonction
+        """
+        Fonction to add a regulation to the model
+        
+        Parameters
+        ----------
+
+        arrow_labels     : list
+            Vector of list of 2 elements, the regulated and the regulator\n
+
+        coefficients     : list
+            Vector of float the represent the intensity of the regulation\n
+
+        signs      : list
+            Vector of 1 or -1, the represent if the regulation is an activation or a inibition\n
+
+        activated       : bool
+            Vector of Bool that say if the associated arrow is ON or OFF\n
+        """
+        # Remplissage de la DataFrame
+        for label, coef, sign, act in zip(arrow_labels, coefficients, signs, activated):
+            regulated_flux, regulator = label
+            coefficient_of_regulation = coef * sign
+            regulation_type = "activation" if sign >= 0 else "inhibition"
+            index = f"{regulated_flux}&{regulator}"
+            
+            self.df.loc[index] = {
+                "Regulated flux": regulated_flux,
+                "Regulator": regulator,
+                "Coefficient of regulation": coefficient_of_regulation,
+                "Type regulation": regulation_type,
+                "Activated": act
+            }
+
+            if act:
+                # If the regulator is an internal metabolite
+                if self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == False:
+                    self.__class_MODEL_instance.elasticity.s.regulation.at[
+                        regulated_flux, regulator
+                    ] += coefficient_of_regulation
+                
+                # If the regulator is an external metabolite
+                elif self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == True:
+                    self.__class_MODEL_instance.elasticity.p.df.at[
+                        regulated_flux, regulator+"_para"
+                    ] += coefficient_of_regulation
+
 
             self.__class_MODEL_instance._update_elasticity()
 
@@ -197,19 +261,40 @@ class Regulation_class:
         else:
             regulated = self.df.at[name_regu, "Regulated flux"]
             regulator = self.df.at[name_regu, "Regulator"]
-            # if it is an allosteric/direct regulation
-            if self.df.at[name_regu, "Type regulation"] == "allosteric":
-                # Soustraction of the old value and addition of the new one on the E_s matrix
-                self.__class_MODEL_instance.elasticity.s.df.at[
-                    regulated, regulator
-                ] += (new_coeff - self.df.at[name_regu, "Coefficient of regulation"])
 
-            # Case of a transcriptional/undirect regulation
-            else:
-                # Soustraction of the old value and addition of the new one on the E_s matrix
-                self.__class_MODEL_instance.elasticity.s.df.at[
-                    "creation_" + name_regu, regulator
-                ] += (new_coeff - self.df.at[name_regu, "Coefficient of regulation"])
+            # If the regulator is an internal metabolite
+            if self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == False:
+                
+                # if it is an allosteric/direct regulation
+                if self.df.at[name_regu, "Type regulation"] == "allosteric":
+                    # Soustraction of the old value and addition of the new one on the E_s matrix
+                    self.__class_MODEL_instance.elasticity.s.regulation.at[
+                        regulated, regulator
+                    ] += (new_coeff - self.df.at[name_regu, "Coefficient of regulation"])
+
+                # Case of a transcriptional/undirect regulation
+                else:
+                    # Soustraction of the old value and addition of the new one on the E_s matrix
+                    self.__class_MODEL_instance.elasticity.s.regulation.at[
+                        "creation_" + name_regu, regulator
+                    ] += (new_coeff - self.df.at[name_regu, "Coefficient of regulation"])
+
+            # If the regulator is an external metabolite
+            elif self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == True:
+                # if it is an allosteric/direct regulation
+                if self.df.at[name_regu, "Type regulation"] == "allosteric":
+                    # Soustraction of the old value and addition of the new one on the E_s matrix
+                    self.__class_MODEL_instance.elasticity.p.df.at[
+                        regulated, regulator
+                    ] += (new_coeff - self.df.at[name_regu, "Coefficient of regulation"])
+
+                # Case of a transcriptional/undirect regulation
+                else:
+                    # Soustraction of the old value and addition of the new one on the E_s matrix
+                    self.__class_MODEL_instance.elasticity.p.df.at[
+                        "creation_" + name_regu, regulator
+                    ] += (new_coeff - self.df.at[name_regu, "Coefficient of regulation"])
+
 
             # Attribution of the new value to the coeff
             self.df.at[name_regu, "Coefficient of regulation"] = new_coeff
@@ -219,7 +304,7 @@ class Regulation_class:
     #################################################################################
     #########        Fonction to activate a regulation arrow               ##########
 
-    def activate(self, name: str) -> None:
+    def activate(self, name_regu: str) -> None:
         ### Description of the fonction
         """
         Fonction to activate a regulation arrow
@@ -227,45 +312,66 @@ class Regulation_class:
         Parameters
         ----------
 
-        name        : str
+        name_regu        : str
             Name of the regulation name to activate
         """
 
         # Look if the regulation is in the model
-        if name not in self.df.index:
+        if name_regu not in self.df.index:
             raise NameError(
-                f"The regulation {name} is not in the regulation dataframe, please enter a valide name \n"
+                f"The regulation {name_regu} is not in the regulation dataframe, please enter a valide name \n"
             )
         
-        regulated = self.df.at[name, "Regulated flux"]
-        regulator = self.df.at[name, "Regulator"]
-        coeff = self.df.at[name, "Coefficient of regulation"]
+        regulated = self.df.at[name_regu, "Regulated flux"]
+        regulator = self.df.at[name_regu, "Regulator"]
+        coeff = self.df.at[name_regu, "Coefficient of regulation"]
+
         # If the regulation arrows is initialy inactivated, we modifiy the elasticity
-        if self.df.at[name, "Activated"] == False : 
+        if self.df.at[name_regu, "Activated"] == False : 
             
-            # Case where it is an alosteric regulation
-            if self.df.at[name, "Type regulation"] == "allosteric" :
-                self.__class_MODEL_instance.elasticity.s.df.at[regulated, regulator] += coeff
-            
-            # Case where itis a transcriptionnal regulation
-            elif self.df.at[name, "Type regulation"] == "transcriptional" :
-            # name of the enzyme linked to this regulation
-                enzyme = "enzyme_" + name
+            # If the regulator is an internal metabolite
+            if self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == False:
+                
+                # Case where it is an alosteric regulation
+                if self.df.at[name_regu, "Type regulation"] == "allosteric" :
+                    self.__class_MODEL_instance.elasticity.s.regulation.at[regulated, regulator] += coeff
+                
+                # Case where itis a transcriptionnal regulation
+                elif self.df.at[name_regu, "Type regulation"] == "transcriptional" :
+                # name of the enzyme linked to this regulation
+                    enzyme = "enzyme_" + name_regu
 
-                # We concidere now this enzyme as a metabolite
-                self.__class_MODEL_instance.metabolites.add(name=enzyme)
-                self.__class_MODEL_instance.reactions.add(
-                    name="creation_" + name, metabolites={enzyme: 1}
-                )
-                self.__class_MODEL_instance.reactions.add(
-                    name="destruction_" + name, metabolites={enzyme: -1}
-                )
-                self.__class_MODEL_instance.elasticity.s.df.at[
-                    "creation_" + name, regulator
-                ] += coeff
+                    # We concidere now this enzyme as a metabolite
+                    self.__class_MODEL_instance.metabolites.add(name=enzyme)
+                    # And add 2 reactions of production and degradation
+                    self.__class_MODEL_instance.reactions.add(name="production_" + name_regu, metabolites={enzyme: 1})
+                    self.__class_MODEL_instance.reactions.add(name="degradation_" + name_regu, metabolites={enzyme: -1})
+                    # And then change the coefficient of the elasticity matrix
+                    self.__class_MODEL_instance.elasticity.s.regulation.at["production_" + name_regu, regulator] += coeff
+        
+
+            # If the regulator is an external metabolite
+            elif self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == True:
+                
+                # Case where it is an alosteric regulation
+                if self.df.at[name_regu, "Type regulation"] == "allosteric" :
+                    self.__class_MODEL_instance.elasticity.p.df.at[regulated, regulator] += coeff
+                
+                # Case where itis a transcriptionnal regulation
+                elif self.df.at[name_regu, "Type regulation"] == "transcriptional" :
+                # name of the enzyme linked to this regulation
+                    enzyme = "enzyme_" + name_regu
+
+                    # We concidere now this enzyme as a metabolite
+                    self.__class_MODEL_instance.metabolites.add(name=enzyme)
+                    # And add 2 reactions of production and degradation
+                    self.__class_MODEL_instance.reactions.add(name="production_" + name_regu, metabolites={enzyme: 1})
+                    self.__class_MODEL_instance.reactions.add(name="degradation_" + name_regu, metabolites={enzyme: -1})
+                    # And then change the coefficient of the elasticity matrix
+                    self.__class_MODEL_instance.elasticity.p.df.at["production_" + name_regu, regulator] += coeff
 
 
-        self.df.at[name, "Activated"] = True
+        self.df.at[name_regu, "Activated"] = True
 
         # Then we update the rest of the model
         self.__class_MODEL_instance._update_network()
@@ -274,9 +380,9 @@ class Regulation_class:
 
 
     #################################################################################
-    #########        Fonction to inactivate a regulation arrow            ##########
+    #########        Fonction to inactivate a regulation arrow            ###########
 
-    def inactivate(self, name: str) -> None:
+    def inactivate(self, name_regu: str) -> None:
         ### Description of the fonction
         """
         Fonction to inactivate a regulation arrow
@@ -284,40 +390,62 @@ class Regulation_class:
         Parameters
         ----------
 
-        name        : str
+        name_regu        : str
             Name of the regulation name to inactivate
         """
 
         # Look if the regulation is in the model
-        if name not in self.df.index:
+        if name_regu not in self.df.index:
             raise NameError(
-                f"The regulation {name} is not in the regulation dataframe, please enter a valide name \n"
+                f"The regulation {name_regu} is not in the regulation dataframe, please enter a valide name \n"
             )
         
-        regulated = self.df.at[name, "Regulated flux"]
-        regulator = self.df.at[name, "Regulator"]
-        coeff = self.df.at[name, "Coefficient of regulation"]
+        regulated = self.df.at[name_regu, "Regulated flux"]
+        regulator = self.df.at[name_regu, "Regulator"]
+        coeff = self.df.at[name_regu, "Coefficient of regulation"]
 
         # If the regulation arrows is initialy activated, we modifiy the elasticity
-        if self.df.at[name, "Activated"] == True : 
+        if self.df.at[name_regu, "Activated"] == True : 
             
-            # Case where it is an alosteric regulation
-            if self.df.at[name, "Type regulation"] == "allosteric" :
-                # We substract the coeff
-                self.__class_MODEL_instance.elasticity.s.df.at[regulated, regulator] -= coeff
-            
-            # Case where itis a transcriptionnal regulation
-            elif self.df.at[name, "Type regulation"] == "transcriptional" :
-                # name of the enzyme linked to this regulation
-                enzyme = "enzyme_" + name
+            # If the regulator is an internal metabolite
+            if self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == False:
 
-                # We remove the enzyme that where considere like a metabolite
-                self.__class_MODEL_instance.metabolites.remove(enzyme)
-                self.__class_MODEL_instance.reactions.remove(name="creation_" + name)
-                self.__class_MODEL_instance.reactions.remove(name="destruction_" + name)
+                # Case where it is an alosteric regulation
+                if self.df.at[name_regu, "Type regulation"] == "allosteric" :
+                    # We substract the coeff
+                    self.__class_MODEL_instance.elasticity.s.regulation.at[regulated, regulator] -= coeff
+                
+                # Case where itis a transcriptionnal regulation
+                elif self.df.at[name_regu, "Type regulation"] == "transcriptional" :
+                    # name of the enzyme linked to this regulation
+                    enzyme = "enzyme_" + name_regu
 
+                    # We remove the enzyme that where considere like a metabolite
+                    self.__class_MODEL_instance.metabolites.remove(enzyme)
+                    # And its associated reactions
+                    self.__class_MODEL_instance.reactions.remove(name="creation_" + name_regu)
+                    self.__class_MODEL_instance.reactions.remove(name="destruction_" + name_regu)
 
-        self.df.at[name, "Activated"] = False
+                        # If the regulator is an internal metabolite
+            elif self.__class_MODEL_instance.metabolites.df.at[regulator, "External"] == True:
+
+                # Case where it is an alosteric regulation
+                if self.df.at[name_regu, "Type regulation"] == "allosteric" :
+                    # We substract the coeff
+                    self.__class_MODEL_instance.elasticity.p.df.at[regulated, regulator] -= coeff
+                
+                # Case where itis a transcriptionnal regulation
+                elif self.df.at[name_regu, "Type regulation"] == "transcriptional" :
+                    # name of the enzyme linked to this regulation
+                    enzyme = "enzyme_" + name_regu
+
+                    # We remove the enzyme that where considere like a metabolite
+                    self.__class_MODEL_instance.metabolites.remove(enzyme)
+                    # And its associated reactions
+                    self.__class_MODEL_instance.reactions.remove(name="creation_" + name_regu)
+                    self.__class_MODEL_instance.reactions.remove(name="destruction_" + name_regu)
+
+        self.df.at[name_regu, "Activated"] = False
 
         # Then we update the rest of the model
         self.__class_MODEL_instance._update_network()

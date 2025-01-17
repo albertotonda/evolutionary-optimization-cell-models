@@ -660,7 +660,12 @@ class MODEL:
             index= index,
             columns= index
             )
-
+    
+    ###################
+    # Variance matrix
+    @property
+    def variance(self):
+        return(pd.DataFrame({"Variance": self.covariance.values.diagonal()}, index = self.covariance.index))
 
     ###########################
     # Correlation
@@ -921,6 +926,7 @@ class MODEL:
             if new_df.shape == self.__N.shape :
                 self.__Stoichio_matrix_pd = new_df
             # Else we update the model
+
             else :
                 # First we remove all the previous reactions
                 for reaction in self.reactions.df :
@@ -959,6 +965,7 @@ class MODEL:
         Fonction to update the dataframes after atribuated a new values to the stoichio matrix
         """
         if self.activate_update :
+
             self.metabolites.__init__(self)
             self.reactions.__init__(self)
             # Deal with the metabolites
@@ -987,6 +994,7 @@ class MODEL:
             # We update the elasticities matrix based on the new stoichiometric matrix
             self._update_elasticity()
 
+
     #################################################################################
     ############     Function to the elaticities matrix of the model     ############
         
@@ -1008,34 +1016,35 @@ class MODEL:
                 if self.metabolites.df.at[meta, "External"] == False :
                     meta_int.append(meta)
 
-
+            # We look for the metabolite that isn't in the model
             missing_meta = [meta for meta in meta_int if meta not in self.elasticity.s.df.columns]
+
             if missing_meta:
-                # Créer un DataFrame temporaire avec des colonnes manquantes, toutes remplies de 0
-                df_temp = pd.DataFrame(0, index=self.elasticity.s.df.index, columns=missing_meta)
+                # Creation of temporary DataFrame of the missing columns, filled with 0
+                df_temp = pd.DataFrame(0., index=self.elasticity.s.df.index, columns=missing_meta, dtype="float64")
                 
-                # Concaténer les colonnes manquantes au DataFrame original
-                self.elasticity.s.df = pd.concat([self.elasticity.s.df, df_temp], axis=1)
-            
+                # Concatenation of this dataframe of the missing column with the current DataFrame
+                self.elasticity.s.thermo = pd.concat([self.elasticity.s.thermo, df_temp], axis=1)
+                self.elasticity.s.enzyme = pd.concat([self.elasticity.s.enzyme, df_temp], axis=1)
+                self.elasticity.s.regulation = pd.concat([self.elasticity.s.regulation, df_temp], axis=1)
+
             # For every metabolite of the E_s elasticity matrix :
             for meta in self.elasticity.s.df.columns:
                 # If the metabolite isn't in the stoichio matrix => we remove it from the E_s elasticity matrix
                 if meta not in self.N_without_ext.index:
-                    self.elasticity.s.df.drop(columns=meta, inplace=True)
+                    self.elasticity.s.thermo.drop(columns=meta, inplace=True)
+                    self.elasticity.s.enzyme.drop(columns=meta, inplace=True)
+                    self.elasticity.s.regulation.drop(columns=meta, inplace=True)
 
             # Special case when there is no reaction
             # Pandas doesn't allow to add line before at least 1 column is add
             if self.elasticity.s.df.columns.size != 0:
                 for reaction in self.reactions.df.index:
                     if reaction not in self.elasticity.s.df.index:
-                        self.elasticity.s.df.loc[reaction] = [0 for i in self.elasticity.s.df.columns]
+                        self.elasticity.s.thermo.loc[reaction] = [0. for i in self.elasticity.s.df.columns]
+                        self.elasticity.s.enzyme.loc[reaction] = [0. for i in self.elasticity.s.df.columns]
+                        self.elasticity.s.regulation.loc[reaction] = [0. for i in self.elasticity.s.df.columns]
 
-            # Reset of the thermodynamic sub-matrix of the E_s elasticity matrix
-            colonnes = self.elasticity.s.df.columns
-            index = self.elasticity.s.df.index
-            self.elasticity.s.thermo = pd.DataFrame(0, columns=colonnes, index=index)
-            self.elasticity.s.enzyme = pd.DataFrame(0, columns=colonnes, index=index)
-            self.elasticity.s.regulation = pd.DataFrame(0, columns=colonnes, index=index)
 
             
 
@@ -2903,13 +2912,14 @@ class MODEL:
                         matrix[i][j] = -1
                     elif i - 1 == j:
                         matrix[i][j] = 1
-            
+
             noms_lignes = [list_alphabet[i] for i in range(n)]
             if grec :
                 noms_colonnes = [r"$\nu$"+str(i) for i in range(n - 1)]
             else :
                 noms_colonnes = [f"v_{i}" for i in range(n - 1)]
             # Attribution of the new stoichiometic matrix
+
             self.Stoichio_matrix_pd = pd.DataFrame(matrix, index=noms_lignes, columns=noms_colonnes)
 
             self.metabolites.df.loc[list_alphabet[0], "External"] = True
@@ -2917,7 +2927,6 @@ class MODEL:
 
             for reaction in self.Stoichio_matrix_pd.columns:
                 self.elasticity.p.df.at[reaction, "Temperature"] = 0
-
 
             self._update_elasticity()
 

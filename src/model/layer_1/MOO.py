@@ -23,6 +23,7 @@ class MOO_class:
         self.__cache_modified_elements = None
         self.__cache_vectors = None
         self.__cov_is_studied = True
+        self.First_article = True
 
         # Fake real data of the model
         self.real_data = {"Elasticity" : np.array([]),"Correlation" : pd.DataFrame(), "Covariance" : pd.DataFrame()}
@@ -54,7 +55,7 @@ class MOO_class:
             # We attribute to it a dictionnary
             self.__cache_modified_elements = {}
 
-            ela_half = self.__class_MODEL_instance.elasticity.s.half_satured(we_return=True).copy()
+            ela_half = self.__class_MODEL_instance.elasticity.s.half_satured(returned=True).copy()
             # We look for the half-saturated elasticity coefficent between every internal-species and reactions
             for react in ela_half.index :
                 for meta in ela_half.columns :
@@ -71,50 +72,88 @@ class MOO_class:
     ##########################################################################
     #########      function to set the vector for the MOO           ##########
     def set_vector(self) :
-        # Initialisation of the dict that contain all the vectors
-        vectors = {"shape": 0,
-                   "labels": np.array([]),
-                   "coordinates": np.array([]),
+        
+        print(self.First_article)
+        # For the 1st article
+        if self.First_article:
+
+            # Initialisation of the dict that contain all the vectors
+            vectors = {"shape": 0,
+                        "labels": np.array([]),
+                        "coordinates": np.array([]),
+                        "min": np.array([]),
+                        "max": np.array([]),
+                        "sign": np.array([]),
+                        "mu" : np.array([]),
+                        "sigma": np.array([]),
+                        "interactions": np.array([])}
+            
+            vectors["shape"] = len(self.modified_elements)
+            
+            labels = []
+            coordinates = []
+            min = []
+            max = []
+            sign = []
+            mu = []
+            sigma = []
+            for key, value in self.modified_elements.items() :
+
+                labels.append(key)
+
+                id_row = self.__class_MODEL_instance.elasticity.s.df.index.get_loc(key[0])
+                id_col = self.__class_MODEL_instance.elasticity.s.df.columns.get_loc(key[1])
+                coordinates.append((id_row, id_col))
+
+                min.append(0.)
+                #max.append(2*np.abs(value))
+                max.append(1)
+                
+                sign.append(value / np.abs(value))
+
+                mu.append(np.abs(value))
+                sigma.append(0.5)
+
+
+            vectors["labels"] = np.array(labels)
+            vectors["coordinates"] = np.array(coordinates)
+            vectors["min"]   = np.array(min)
+            vectors["max"]   = np.array(max)
+            vectors["sign"]  = np.array(sign)
+            vectors["mu"]    = np.array(mu)
+            vectors["sigma"] = np.array(sigma)
+        
+        # For the case of the 2nd article
+        else :
+            # Initialisation of the dict that contain all the vectors
+            vectors = {"shape": 0,
+                    "arrow_labels": np.array([]),
                     "min": np.array([]),
                     "max": np.array([]),
                     "sign": np.array([]),
-                    "mu" : np.array([]),
-                    "sigma": np.array([]),
-                    "interactions": np.array([])}
-        
-        vectors["shape"] = len(self.modified_elements)
-        
-        labels = []
-        coordinates = []
-        min = []
-        max = []
-        sign = []
-        mu = []
-        sigma = []
-        for key, value in self.modified_elements.items() :
+                    "target": np.array([]),
+                    "weight": np.array([])}
+            
+            regulateds = self.__class_MODEL_instance.reactions.list
+            regulators = self.__class_MODEL_instance.metabolites.list
+            shape = 0
+            arrows_labels = []
+            min = []
+            max = []
+            sign = []
+            for regulted in regulateds:
+                for regulator in regulators:
+                    shape+=1
+                    arrows_labels.append([regulted, regulator])
+                    min.append(0)
+                    max.append(1)
+                    sign.append((-1)**shape)
 
-            labels.append(key)
-
-            id_row = self.__class_MODEL_instance.elasticity.s.df.index.get_loc(key[0])
-            id_col = self.__class_MODEL_instance.elasticity.s.df.columns.get_loc(key[1])
-            coordinates.append((id_row, id_col))
-
-            min.append(0.)
-            #max.append(2*np.abs(value))
-            max.append(1)
-            sign.append(value/np.abs(value))
-
-            mu.append(np.abs(value))
-            sigma.append(0.5)
-
-
-        vectors["labels"] = np.array(labels)
-        vectors["coordinates"] = np.array(coordinates)
-        vectors["min"]   = np.array(min)
-        vectors["max"]   = np.array(max)
-        vectors["sign"]  = np.array(sign)
-        vectors["mu"]    = np.array(mu)
-        vectors["sigma"] = np.array(sigma)
+            vectors["shape"]   = shape
+            vectors["arrow_labels"] = np.array(arrows_labels)
+            vectors["min"]   = np.array(min)
+            vectors["max"]   = np.array(max)
+            vectors["sign"]  = np.array(sign)
 
         self.__cache_vectors = vectors
     
@@ -334,6 +373,43 @@ class MOO_class:
 
         return(sum)
 
+
+    #############################################################################################################
+    #########                 Function evaluate the cost of the introduced regulation arrows           ##########  
+    def cost_enzyme(self) :
+        ### Description of the fonction
+        """
+        Function to evaluate the cost of the introduced regulation arrows
+        """
+        label_regulations = [f"{item[0]}&{item[1]}" for item in self.vectors["arrow_labels"]]
+        
+        list_coeff = self.__class_MODEL_instance.regulations.df.loc[label_regulations, "Coefficient of regulation"].tolist()
+
+        sum = np.sum(np.abs(list_coeff))
+
+        return(sum)
+    
+    ##############################################################################################################
+    #########                 Function evaluate the benefite of introducing regulation arrows           ##########  
+    def cost_output(self) :
+        ### Description of the fonction
+        """
+        Function to evaluate the benefite of introducing regulation arrows 
+        """
+        list_var = self.__class_MODEL_instance.variance.loc[self.vectors["target"]]["Variance"].tolist()
+        list_weight = self.vectors["weight"]
+
+        sum = 0
+        for i,var in enumerate(list_var) :
+            if i < len(list_weight):
+                sum += list_weight[i]*var
+            else :
+                sum += 1.*var
+        
+        #sum = np.sum(np.abs(list_var))
+        return(sum)
+
+
     ##################################################################################################
     #########      Function to return the fitness value that we are interested in           ##########      
     def list_fitness(self):
@@ -341,8 +417,12 @@ class MOO_class:
         """
         Function to return the fitness value that we are interested in
         """
-        return([self.similarity(), self.prior_divergence()])
-
+        if self.First_article:
+            return([self.similarity(), self.prior_divergence()])
+    
+        else :
+            return([self.cost_enzyme(), self.cost_output()])
+        
     ################################################################################################################################
     ################################################################################################################################
     ##############  DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE - DoE  #################
@@ -352,7 +432,7 @@ class MOO_class:
 
     ##########################################################################
     #########         Function to build a premade model             ########## 
-    def build_model(self, seed=1 , N=4, cov_is_studied=True, source_file=None):
+    def build_model(self, seed=1 , N=4, first_article=True, source_file=None):
         """
         seed : int
             Seed for the generation of the fake real data\n
@@ -379,9 +459,14 @@ class MOO_class:
         self.__class_MODEL_instance.parameters.remove("Temperature")
         self.__class_MODEL_instance.elasticity.s.half_satured() 
 
+
+        ### This part is for the 1st article ###
+        self.__class_MODEL_instance.MOO.First_article = first_article
+        
         self.__class_MODEL_instance.MOO.build_data(seed)
 
-        self.__class_MODEL_instance.MOO.cov_is_studied = cov_is_studied
+
+
 
 
     ##########################################################################
@@ -393,6 +478,9 @@ class MOO_class:
         self.sampled_elements()
         self.set_real_data(seed)
         self.set_vector()
+
+        if self.First_article:
+            self.vectors["max"] = 2.*np.abs([self.__class_MODEL_instance.elasticity.s.df.loc[row, col] for row, col in self.vectors["labels"]])
 
     #########################################################################
     ########  Function to interpolate the between the 2 matrices  ###########
