@@ -34,7 +34,8 @@ def specialized_mutation(random : random.Random, candidate : dict, args : dict) 
     child = {
         'ereg_arcs' : candidate['ereg_arcs'].copy(),
         'ereg_values' : candidate['ereg_values'].copy(),
-        'ekin_values' : candidate['ekin_values'].copy()
+        # this part is not included in a first version
+        #'ekin_values' : candidate['ekin_values'].copy()
              }
     
     # then, we need to decide what to do; throwing some random numbers around
@@ -53,8 +54,10 @@ def specialized_mutation(random : random.Random, candidate : dict, args : dict) 
                 child['ereg_arcs'][index] = 0
                 
             n_mutations += 1
-            
-        elif random_number > 0.34 and random_number <= 0.67 :
+        
+        # this skips the 'ekin' part below, as in a first experiment we are not
+        # working with 'ekin'
+        elif random_number > 0.34 and random_number <= 1.00 :
             # modify one of the values; but ONLY the values that are actually
             # 'active' (so, the arcs that are equal to 1)
             valid_indexes = [ i for i in range(0, n_variables_ereg)
@@ -75,7 +78,7 @@ def specialized_mutation(random : random.Random, candidate : dict, args : dict) 
     # after potentially several iterations, apply bounder on the values
     # and return the child
     child['ereg_values'] = bounder_ereg(child['ereg_values'], args)
-    child['ekin_values'] = bounder_ekin(child['ekin_values'], args)
+    #child['ekin_values'] = bounder_ekin(child['ekin_values'], args)
     
     return child
 
@@ -106,9 +109,9 @@ def specialized_crossover(random : random.Random, parent1 : dict, parent2 : dict
         child2['ereg_values'][index_ereg:] = parent1['ereg_values'][index_ereg:]
         
         # also swap ekin values
-        index_ekin = random.choice(range(0, n_variables_ekin))
-        child1['ekin_values'][:index_ekin] = parent2['ekin_values'][:index_ekin]
-        child2['ekin_values'][index_ekin:] = parent1['ekin_values'][index_ekin:]
+        #index_ekin = random.choice(range(0, n_variables_ekin))
+        #child1['ekin_values'][:index_ekin] = parent2['ekin_values'][:index_ekin]
+        #child2['ekin_values'][index_ekin:] = parent1['ekin_values'][index_ekin:]
     
     # return children as a list
     return [child1, child2]
@@ -124,8 +127,8 @@ def generator(random : random.Random, args : dict) :
     
     individual = {
         'ereg_arcs' : [random.choice([0,1]) for _ in range(0, n_variables_ereg)], 
-        'ereg_values' : [random.uniform(-1,1) for _ in range(0, n_variables_ereg)],
-        'ekin_values' : [random.uniform(0,1) for _ in range(0, n_variables_ekin)]
+        'ereg_values' : [random.uniform(0,1) for _ in range(0, n_variables_ereg)],
+        #'ekin_values' : [random.uniform(0,1) for _ in range(0, n_variables_ekin)]
                   }
     
     return individual
@@ -143,18 +146,19 @@ def evaluator(candidate, args) :
     # first fitness function: minimize number of arcs at 1
     fitness_min_arcs = sum(candidate['ereg_arcs'])
     # and also minimize the sum of ekin_values
-    fitness_min_arcs += sum(candidate['ekin_values'])
+    #fitness_min_arcs += sum(candidate['ekin_values'])
     
     # second fitness function: minimize sum of values that have arcs at 1,
-    # this should lead to a negative number, as ereg_values can range in (-1,1)
+    # negated because then we can go below zero, otherwise the solution becomes
+    # trivial (all arcs set to zero)
     valid_indexes = [i for i in range(0, n_variables_ereg) 
                      if candidate['ereg_arcs'][i] == 1]
-    fitness_min_values = sum([candidate['ereg_values'][i] for i in valid_indexes])
+    fitness_min_values = -sum([candidate['ereg_values'][i] for i in valid_indexes])
     
     # let's also add ekin_values to the mix; these values range in (0,1), so we
     # add them up and subtract them from the fitness_min_values, creating a
     # pressure to maximize the sum
-    fitness_min_values += -sum(candidate['ekin_values'])
+    #fitness_min_values += -sum(candidate['ekin_values'])
     
     return inspyred.ec.emo.Pareto([fitness_min_arcs, fitness_min_values])
 
@@ -194,9 +198,9 @@ def observer(population, num_generations, num_evaluations, args) :
         for i in range(0, len(population[0].candidate['ereg_values'])) :
             population_dictionary['ereg_values_%d' % i] = [individual.candidate['ereg_values'][i] for
                                                            individual in population]
-        for i in range(0, len(population[0].candidate['ekin_values'])) :
-            population_dictionary['ekin_values_%d' % i] = [individual.candidate['ekin_values'][i] for
-                                                           individual in population]
+        #for i in range(0, len(population[0].candidate['ekin_values'])) :
+        #    population_dictionary['ekin_values_%d' % i] = [individual.candidate['ekin_values'][i] for
+        #                                                   individual in population]
         
         df = pd.DataFrame.from_dict(population_dictionary)
         df.to_csv(file_name, index=False)
@@ -215,7 +219,7 @@ if __name__ == "__main__" :
     fitness_names = ["fitness_1", "fitness_2"]
     output_folder = "../local/" + os.path.basename(__file__)[:-3]
     n_variables_ereg = 10 # ekin and ereg are the two parts of the elasticity matrix
-    n_variables_ekin = 5
+    n_variables_ekin = 0
     population_size = 100
     offspring_size = 100
     max_generations = 200
@@ -234,7 +238,7 @@ if __name__ == "__main__" :
     nsga2 = inspyred.ec.emo.NSGA2(prng)
     
     # specific bounders for each separate set of values
-    bounder_ereg = inspyred.ec.Bounder(lower_bound=-1.0, upper_bound=1.0)
+    bounder_ereg = inspyred.ec.Bounder(lower_bound=0.0, upper_bound=1.0)
     bounder_ekin = inspyred.ec.Bounder(lower_bound=0.0, upper_bound=1.0)
     
     nsga2.observer = observer
