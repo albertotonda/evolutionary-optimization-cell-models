@@ -181,9 +181,14 @@ class Regulation_class:
         activated       : bool
             Vector of Bool that say if the associated arrow is ON or OFF\n
         """
-        # Remplissage de la DataFrame
+        # We adjuste the magnitude of the arrow depending of the maximum and minimum
+        coefficients = (np.array(self.__class_MODEL_instance.MOO.vectors["max"]-self.__class_MODEL_instance.MOO.vectors["min"])
+                    )*np.array(coefficients) + self.__class_MODEL_instance.MOO.vectors["min"]
+        
+        # Filling of the DataFrame
         for label, coef, sign, act in zip(arrow_labels, coefficients, signs, activated):
             regulated_flux, regulator = label
+
             coefficient_of_regulation = coef * sign
             regulation_type = "activation" if sign >= 0 else "inhibition"
             index = f"{regulated_flux}&{regulator}"

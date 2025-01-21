@@ -73,7 +73,6 @@ class MOO_class:
     #########      function to set the vector for the MOO           ##########
     def set_vector(self) :
         
-        print(self.First_article)
         # For the 1st article
         if self.First_article:
 
@@ -381,11 +380,17 @@ class MOO_class:
         """
         Function to evaluate the cost of the introduced regulation arrows
         """
+        # First we get every arrow labels implied in this experience
         label_regulations = [f"{item[0]}&{item[1]}" for item in self.vectors["arrow_labels"]]
         
-        list_coeff = self.__class_MODEL_instance.regulations.df.loc[label_regulations, "Coefficient of regulation"].tolist()
+        # Then we get a list of 0 and 1 that represent if the arrow is activated or not
+        int_list = np.array(self.__class_MODEL_instance.regulations.df.loc[label_regulations, 'Activated'].tolist(), dtype=int)
 
-        sum = np.sum(np.abs(list_coeff))
+        # Same with the absolute value of the coeffcient
+        coeff_list = np.abs(self.__class_MODEL_instance.regulations.df.loc[label_regulations, 'Coefficient of regulation'].tolist(), dtype="float64")
+        
+        # Then we do the sum of every enzyme cost of each regulation
+        sum = np.sum(int_list*coeff_list)
 
         return(sum)
     
@@ -396,17 +401,13 @@ class MOO_class:
         """
         Function to evaluate the benefite of introducing regulation arrows 
         """
-        list_var = self.__class_MODEL_instance.variance.loc[self.vectors["target"]]["Variance"].tolist()
-        list_weight = self.vectors["weight"]
+        list_var = np.array(self.__class_MODEL_instance.variance.loc[self.vectors["target"]]["Variance"].tolist())
+        list_weight = np.array(self.vectors["weight"])
 
-        sum = 0
-        for i,var in enumerate(list_var) :
-            if i < len(list_weight):
-                sum += list_weight[i]*var
-            else :
-                sum += 1.*var
-        
-        #sum = np.sum(np.abs(list_var))
+        list_prod = list_weight*list_var
+
+        sum = np.sum(list_prod)
+
         return(sum)
 
 
@@ -460,12 +461,10 @@ class MOO_class:
         self.__class_MODEL_instance.elasticity.s.half_satured() 
 
 
-        ### This part is for the 1st article ###
+        ### Here we specify if the built is for the 1st article or not
         self.__class_MODEL_instance.MOO.First_article = first_article
         
         self.__class_MODEL_instance.MOO.build_data(seed)
-
-
 
 
 
@@ -479,6 +478,7 @@ class MOO_class:
         self.set_real_data(seed)
         self.set_vector()
 
+        # If it is for the 1st article, we modify the maximum of the elasticity coefficents
         if self.First_article:
             self.vectors["max"] = 2.*np.abs([self.__class_MODEL_instance.elasticity.s.df.loc[row, col] for row, col in self.vectors["labels"]])
 
