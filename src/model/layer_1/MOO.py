@@ -54,7 +54,7 @@ class MOO_class:
             
             # We attribute to it a dictionnary
             self.__cache_modified_elements = {}
-
+            
             ela_half = self.__class_MODEL_instance.elasticity.s.half_satured(returned=True).copy()
             # We look for the half-saturated elasticity coefficent between every internal-species and reactions
             for react in ela_half.index :
@@ -62,7 +62,7 @@ class MOO_class:
                     # If this elasticity coefficient isn't 0 :
                     if ela_half.at[react, meta] != 0 :
                         # We add the pair reaction/metabolite as key of the dictionnary and the value
-                        self.__cache_modified_elements[(react, meta)] = ela_half.at[react, meta]
+                        self.__cache_modified_elements[(react, meta)] = 0.5*ela_half.at[react, meta]/np.abs(ela_half.at[react, meta])
 
 
     @property
@@ -73,6 +73,7 @@ class MOO_class:
     #########      function to set the vector for the MOO           ##########
     def set_vector(self) :
         
+        print(self.First_article)
         # For the 1st article
         if self.First_article:
 
@@ -346,10 +347,11 @@ class MOO_class:
         Function evaluate the difference between the current elasticity and the one that should be use
         """
         sum = 0
+        ela_mu = self.vectors['mu']*(self.vectors['max'] - self.vectors['min']) - self.vectors['min']
         for i, (react, meta) in enumerate(self.vectors["labels"]) :
             ela = self.__class_MODEL_instance.elasticity.s.df.at[react, meta]
-
-            sum+= ((np.abs(ela) - np.abs(self.vectors["mu"][i]) )**2 )/(self.vectors["sigma"][i]**2)
+            print(f"{np.abs(ela)}  |  {ela_mu[i]}")
+            sum+= ((np.abs(ela) - np.abs(ela_mu[i]) )**2 )/(self.vectors["sigma"][i]**2)
             
 
         return(sum)
@@ -380,17 +382,11 @@ class MOO_class:
         """
         Function to evaluate the cost of the introduced regulation arrows
         """
-        # First we get every arrow labels implied in this experience
         label_regulations = [f"{item[0]}&{item[1]}" for item in self.vectors["arrow_labels"]]
         
-        # Then we get a list of 0 and 1 that represent if the arrow is activated or not
-        int_list = np.array(self.__class_MODEL_instance.regulations.df.loc[label_regulations, 'Activated'].tolist(), dtype=int)
+        list_coeff = self.__class_MODEL_instance.regulations.df.loc[label_regulations, "Coefficient of regulation"].tolist()
 
-        # Same with the absolute value of the coeffcient
-        coeff_list = np.abs(self.__class_MODEL_instance.regulations.df.loc[label_regulations, 'Coefficient of regulation'].tolist(), dtype="float64")
-        
-        # Then we do the sum of every enzyme cost of each regulation
-        sum = np.sum(int_list*coeff_list)
+        sum = np.sum(np.abs(list_coeff))
 
         return(sum)
     
@@ -401,13 +397,17 @@ class MOO_class:
         """
         Function to evaluate the benefite of introducing regulation arrows 
         """
-        list_var = np.array(self.__class_MODEL_instance.variance.loc[self.vectors["target"]]["Variance"].tolist())
-        list_weight = np.array(self.vectors["weight"])
+        list_var = self.__class_MODEL_instance.variance.loc[self.vectors["target"]]["Variance"].tolist()
+        list_weight = self.vectors["weight"]
 
-        list_prod = list_weight*list_var
-
-        sum = np.sum(list_prod)
-
+        sum = 0
+        for i,var in enumerate(list_var) :
+            if i < len(list_weight):
+                sum += list_weight[i]*var
+            else :
+                sum += 1.*var
+        
+        #sum = np.sum(np.abs(list_var))
         return(sum)
 
 
@@ -461,10 +461,12 @@ class MOO_class:
         self.__class_MODEL_instance.elasticity.s.half_satured() 
 
 
-        ### Here we specify if the built is for the 1st article or not
+        ### This part is for the 1st article ###
         self.__class_MODEL_instance.MOO.First_article = first_article
         
         self.__class_MODEL_instance.MOO.build_data(seed)
+
+
 
 
 
@@ -478,7 +480,6 @@ class MOO_class:
         self.set_real_data(seed)
         self.set_vector()
 
-        # If it is for the 1st article, we modify the maximum of the elasticity coefficents
         if self.First_article:
             self.vectors["max"] = 2.*np.abs([self.__class_MODEL_instance.elasticity.s.df.loc[row, col] for row, col in self.vectors["labels"]])
 
