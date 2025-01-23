@@ -73,7 +73,6 @@ class MOO_class:
     #########      function to set the vector for the MOO           ##########
     def set_vector(self) :
         
-        print(self.First_article)
         # For the 1st article
         if self.First_article:
 
@@ -350,7 +349,7 @@ class MOO_class:
         ela_mu = self.vectors['mu']*(self.vectors['max'] - self.vectors['min']) - self.vectors['min']
         for i, (react, meta) in enumerate(self.vectors["labels"]) :
             ela = self.__class_MODEL_instance.elasticity.s.df.at[react, meta]
-            print(f"{np.abs(ela)}  |  {ela_mu[i]}")
+
             sum+= ((np.abs(ela) - np.abs(ela_mu[i]) )**2 )/(self.vectors["sigma"][i]**2)
             
 
