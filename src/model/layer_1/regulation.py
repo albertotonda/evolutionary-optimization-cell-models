@@ -185,6 +185,7 @@ class Regulation_class:
         coefficients = (np.array(self.__class_MODEL_instance.MOO.vectors["max"]-self.__class_MODEL_instance.MOO.vectors["min"])
                     )*np.array(coefficients) + self.__class_MODEL_instance.MOO.vectors["min"]
         
+
         # Filling of the DataFrame
         for label, coef, sign, act in zip(arrow_labels, coefficients, signs, activated):
             regulated_flux, regulator = label
@@ -193,13 +194,21 @@ class Regulation_class:
             regulation_type = "activation" if sign >= 0 else "inhibition"
             index = f"{regulated_flux}&{regulator}"
             
-            self.df.loc[index] = {
+
+            row = pd.DataFrame(data = {
                 "Regulated flux": regulated_flux,
                 "Regulator": regulator,
                 "Coefficient of regulation": coefficient_of_regulation,
                 "Type regulation": regulation_type,
                 "Activated": act
-            }
+            }, index=[index])
+
+            # Concatenate the new row to the existing DataFrame
+            if self.df.empty:
+                self.df = row  # Direct assignment if DataFrame is empty
+            else:
+                self.df = pd.concat([self.df, row])
+
 
             if act:
                 # If the regulator is an internal metabolite

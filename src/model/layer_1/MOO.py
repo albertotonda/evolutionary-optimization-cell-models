@@ -54,7 +54,7 @@ class MOO_class:
             
             # We attribute to it a dictionnary
             self.__cache_modified_elements = {}
-            
+
             ela_half = self.__class_MODEL_instance.elasticity.s.half_satured(returned=True).copy()
             # We look for the half-saturated elasticity coefficent between every internal-species and reactions
             for react in ela_half.index :
@@ -62,7 +62,7 @@ class MOO_class:
                     # If this elasticity coefficient isn't 0 :
                     if ela_half.at[react, meta] != 0 :
                         # We add the pair reaction/metabolite as key of the dictionnary and the value
-                        self.__cache_modified_elements[(react, meta)] = 0.5*ela_half.at[react, meta]/np.abs(ela_half.at[react, meta])
+                        self.__cache_modified_elements[(react, meta)] = ela_half.at[react, meta]
 
 
     @property
@@ -346,11 +346,10 @@ class MOO_class:
         Function evaluate the difference between the current elasticity and the one that should be use
         """
         sum = 0
-        ela_mu = self.vectors['mu']*(self.vectors['max'] - self.vectors['min']) - self.vectors['min']
         for i, (react, meta) in enumerate(self.vectors["labels"]) :
             ela = self.__class_MODEL_instance.elasticity.s.df.at[react, meta]
 
-            sum+= ((np.abs(ela) - np.abs(ela_mu[i]) )**2 )/(self.vectors["sigma"][i]**2)
+            sum+= ((np.abs(ela) - np.abs(self.vectors["mu"][i]) )**2 )/(self.vectors["sigma"][i]**2)
             
 
         return(sum)
@@ -381,11 +380,17 @@ class MOO_class:
         """
         Function to evaluate the cost of the introduced regulation arrows
         """
+        # First we get every arrow labels implied in this experience
         label_regulations = [f"{item[0]}&{item[1]}" for item in self.vectors["arrow_labels"]]
         
-        list_coeff = self.__class_MODEL_instance.regulations.df.loc[label_regulations, "Coefficient of regulation"].tolist()
+        # Then we get a list of 0 and 1 that represent if the arrow is activated or not
+        int_list = np.array(self.__class_MODEL_instance.regulations.df.loc[label_regulations, 'Activated'].tolist(), dtype=int)
 
-        sum = np.sum(np.abs(list_coeff))
+        # Same with the absolute value of the coeffcient
+        coeff_list = np.abs(self.__class_MODEL_instance.regulations.df.loc[label_regulations, 'Coefficient of regulation'].tolist(), dtype="float64")
+        
+        # Then we do the sum of every enzyme cost of each regulation
+        sum = np.sum(int_list*coeff_list)
 
         return(sum)
     
@@ -396,18 +401,25 @@ class MOO_class:
         """
         Function to evaluate the benefite of introducing regulation arrows 
         """
-        list_var = self.__class_MODEL_instance.variance.loc[self.vectors["target"]]["Variance"].tolist()
-        list_weight = self.vectors["weight"]
+        list_var = np.array(self.__class_MODEL_instance.variance.loc[self.vectors["target"]]["Variance"].tolist())
+        list_weight = np.array(self.vectors["weight"])
 
-        sum = 0
-        for i,var in enumerate(list_var) :
-            if i < len(list_weight):
-                sum += list_weight[i]*var
-            else :
-                sum += 1.*var
-        
-        #sum = np.sum(np.abs(list_var))
+        list_prod = list_weight*list_var
+
+        sum = np.sum(list_prod)
+
         return(sum)
+
+    ##############################################################################################################
+    #########                       Function to return the number of arrows                             ##########  
+    def number_arrow(self) :
+        ### Description of the fonction
+        """
+        Function to return the number of regulation arrows ON
+        """
+        number_arrow = self.__class_MODEL_instance.regulations.df["Activated"].sum()
+
+        return(number_arrow)
 
 
     ##################################################################################################
@@ -421,7 +433,7 @@ class MOO_class:
             return([self.similarity(), self.prior_divergence()])
     
         else :
-            return([self.cost_enzyme(), self.cost_output()])
+            return([self.cost_enzyme(), self.cost_output(), self.number_arrow()])
         
     ################################################################################################################################
     ################################################################################################################################
@@ -451,7 +463,7 @@ class MOO_class:
         if source_file is not None :
             self.__class_MODEL_instance.read_SBtab(filepath=source_file)
         else :
-            self.__class_MODEL_instance.creat_linear(N, grec=False)
+            self.__class_MODEL_instance.creat_branch(grec=False)
     
         self.__class_MODEL_instance.enzymes.add_to_all_reaction()
         self.__class_MODEL_instance.parameters.add_externals()
@@ -460,12 +472,10 @@ class MOO_class:
         self.__class_MODEL_instance.elasticity.s.half_satured() 
 
 
-        ### This part is for the 1st article ###
+        ### Here we specify if the built is for the 1st article or not
         self.__class_MODEL_instance.MOO.First_article = first_article
         
         self.__class_MODEL_instance.MOO.build_data(seed)
-
-
 
 
 
@@ -479,6 +489,7 @@ class MOO_class:
         self.set_real_data(seed)
         self.set_vector()
 
+        # If it is for the 1st article, we modify the maximum of the elasticity coefficents
         if self.First_article:
             self.vectors["max"] = 2.*np.abs([self.__class_MODEL_instance.elasticity.s.df.loc[row, col] for row, col in self.vectors["labels"]])
 
@@ -507,7 +518,7 @@ class MOO_class:
 
     #######################################################################
     #########      Function to launch the MOO alogorithm         ##########  
-    def launch(self, max_evaluations=300, pop_size=100, num_selected=50, print_result=False) :
+    def launch(self) :
         """
         max_evaluations : int
         Total number of individual evaluated\n
@@ -521,7 +532,7 @@ class MOO_class:
         print_result : bool
         Do we print the result ?
         """
-        from Genetic_Algo import main
+        from inspyred_biological_optimization import main
 
-        main(self.__class_MODEL_instance, print_result, max_evaluations=max_evaluations, pop_size=pop_size, num_selected=num_selected)
+        main(self.__class_MODEL_instance)
     

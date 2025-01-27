@@ -2931,6 +2931,64 @@ class MODEL:
             self._update_elasticity()
 
     #############################################################################
+    ###############  Function to creat a simple linear network ##################
+    def creat_branch(self, grec=True):
+        ### Description of the fonction
+        """
+        Fonction to create a 2 branch system
+        """
+        import string 
+        list_alphabet = list(string.ascii_uppercase)
+        # reinitialisation of the data
+        self.__init__()
+        
+        # 7 meetabolites
+        n = 7
+
+        # Matrix of 7 metabolite and 6 reactions
+        matrix = np.array([[0 for i in range(n - 1)] for k in range(n)])
+
+        # A
+        matrix[0][0] = -1
+        # B
+        matrix[1][0] = 1
+        matrix[1][1] = -1
+        # C
+        matrix[2][1] = 1
+        matrix[2][2] = -1
+        matrix[2][4] = -1
+        # D
+        matrix[3][2] = 1
+        matrix[3][3] = -1
+        # E
+        matrix[4][3] = 1
+        # F
+        matrix[5][4] = 1
+        matrix[5][5] = -1
+        # G
+        matrix[6][5] = 1
+
+
+        noms_lignes = [list_alphabet[i] for i in range(n)]
+        if grec :
+            noms_colonnes = [r"$\nu$"+str(i) for i in range(n - 1)]
+        else :
+            noms_colonnes = [f"v_{i}" for i in range(n - 1)]
+        # Attribution of the new stoichiometic matrix
+
+        self.Stoichio_matrix_pd = pd.DataFrame(matrix, index=noms_lignes, columns=noms_colonnes)
+
+        self.metabolites.df.loc[list_alphabet[0], "External"] = True
+        self.metabolites.df.loc[list_alphabet[n-3], "External"] = True
+        self.metabolites.df.loc[list_alphabet[n-1], "External"] = True
+
+        for reaction in self.Stoichio_matrix_pd.columns:
+            self.elasticity.p.df.at[reaction, "Temperature"] = 0
+
+        self._update_elasticity()
+
+
+    #############################################################################
     ##################   Function to read a CSV/XLS file  #######################
     def setup(self, file_path:str):
         ### Description of the fonction
